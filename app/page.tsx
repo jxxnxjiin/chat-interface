@@ -146,6 +146,16 @@ export default function ChatInterface() {
     }
   }
 
+  const handleNewChat = () => {
+    setMessages([
+      {
+        id: "1",
+        role: "assistant",
+        content: "hello",
+      },
+    ])
+  }
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -159,14 +169,22 @@ export default function ChatInterface() {
           {/* Sidebar Header */}
           <div className="flex items-center justify-between border-b border-sidebar-border p-4">
             <h2 className="text-xl font-semibold">Chats</h2>
-            <Button size="icon" variant="ghost" className="text-sidebar-foreground hover:bg-sidebar-accent">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-sidebar-foreground hover:bg-sidebar-accent"
+              onClick={handleNewChat}
+            >
               <Plus className="h-5 w-5" />
             </Button>
           </div>
 
           {/* Chat History */}
           <div className="flex-1 space-y-2 overflow-y-auto p-4">
-            <button className="w-full rounded-xl bg-sidebar-accent px-4 py-3 text-left text-sm transition-colors hover:bg-sidebar-accent/70">
+            <button
+              className="w-full rounded-xl bg-sidebar-accent px-4 py-3 text-left text-sm transition-colors hover:bg-sidebar-accent/70"
+              onClick={handleNewChat}
+            >
               <div className="flex items-center gap-3">
                 <MessageSquare className="h-4 w-4" />
                 <span className="text-sidebar-accent-foreground">New Conversation</span>
