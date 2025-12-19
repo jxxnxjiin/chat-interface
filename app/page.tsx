@@ -1,23 +1,30 @@
 "use client"
 
-import type React from "react"
-
+import { useChat } from "ai/react"
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, Send, Plus, Settings, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-interface Message {
-  id: string
-  role: "user" | "assistant"
-  content: string
-}
-
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [inputValue, setInputValue] = useState("")
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    setMessages,
+  } = useChat({
+    initialMessages: [
+      {
+        id: "1",
+        role: "assistant",
+        content: "안녕하세요! 무엇을 도와드릴까요?",
+      },
+    ],
+  })
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -28,151 +35,33 @@ export default function ChatInterface() {
     scrollToBottom()
   }, [messages])
 
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      setMessages([
-        {
-          id: "1",
-          role: "assistant",
-          content: "hello",
-        },
-      ])
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [])
-
-  const handleSend = async () => {
-    if (!inputValue.trim() || isLoading) return
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue,
-    }
-
-    const updatedMessages = [...messages, newMessage]
-    setMessages(updatedMessages)
-    setInputValue("")
-    setIsLoading(true)
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages: updatedMessages.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch response")
-      }
-
-      const reader = response.body?.getReader()
-      const decoder = new TextDecoder()
-      let accumulatedContent = ""
-
-      const aiMessageId = (Date.now() + 1).toString()
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split("\n")
-
-          for (const line of lines) {
-            if (line.startsWith("0:")) {
-              try {
-                const jsonStr = line.substring(2)
-                const parsed = JSON.parse(jsonStr)
-                if (parsed.textDelta) {
-                  accumulatedContent += parsed.textDelta
-
-                  setMessages((prev) => {
-                    const existingIndex = prev.findIndex((m) => m.id === aiMessageId)
-                    if (existingIndex >= 0) {
-                      const updated = [...prev]
-                      updated[existingIndex] = {
-                        ...updated[existingIndex],
-                        content: accumulatedContent,
-                      }
-                      return updated
-                    } else {
-                      return [
-                        ...prev,
-                        {
-                          id: aiMessageId,
-                          role: "assistant",
-                          content: accumulatedContent,
-                        },
-                      ]
-                    }
-                  })
-                }
-              } catch (e) {
-                console.error("[v0] Error parsing chunk:", e)
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error("[v0] Error:", error)
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: "Sorry, there was an error processing your request.",
-        },
-      ])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
-
   const handleNewChat = () => {
     setMessages([
       {
         id: "1",
         role: "assistant",
-        content: "hello",
+        content: "안녕하세요! 무엇을 도와드릴까요?",
       },
     ])
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
       <motion.aside
         initial={{ x: -280 }}
         animate={{ x: isSidebarOpen ? 0 : -280 }}
         transition={{ type: "spring", damping: 20, stiffness: 150 }}
-        className="fixed left-0 top-0 z-30 h-full w-[280px] bg-sidebar text-sidebar-foreground shadow-2xl lg:relative"
+        className="fixed left-0 top-0 z-30 h-full w-[280px] bg-card border-r border-border text-card-foreground shadow-2xl lg:relative"
       >
         <div className="flex h-full flex-col">
           {/* Sidebar Header */}
-          <div className="flex items-center justify-between border-b border-sidebar-border p-4">
+          <div className="flex items-center justify-between border-b border-border p-4">
             <h2 className="text-xl font-semibold">Chats</h2>
             <Button
               size="icon"
               variant="ghost"
-              className="text-sidebar-foreground hover:bg-sidebar-accent"
+              className="hover:bg-accent"
               onClick={handleNewChat}
             >
               <Plus className="h-5 w-5" />
@@ -182,25 +71,25 @@ export default function ChatInterface() {
           {/* Chat History */}
           <div className="flex-1 space-y-2 overflow-y-auto p-4">
             <button
-              className="w-full rounded-xl bg-sidebar-accent px-4 py-3 text-left text-sm transition-colors hover:bg-sidebar-accent/70"
+              className="w-full rounded-xl bg-accent px-4 py-3 text-left text-sm transition-colors hover:bg-accent/70"
               onClick={handleNewChat}
             >
               <div className="flex items-center gap-3">
                 <MessageSquare className="h-4 w-4" />
-                <span className="text-sidebar-accent-foreground">New Conversation</span>
+                <span>New Conversation</span>
               </div>
             </button>
-            <button className="w-full rounded-xl px-4 py-3 text-left text-sm transition-colors hover:bg-sidebar-accent">
+            <button className="w-full rounded-xl px-4 py-3 text-left text-sm transition-colors hover:bg-accent">
               <div className="flex items-center gap-3">
                 <MessageSquare className="h-4 w-4 opacity-60" />
-                <span className="text-sidebar-foreground/70">Previous Chat</span>
+                <span className="opacity-70">Previous Chat</span>
               </div>
             </button>
           </div>
 
           {/* Sidebar Footer */}
-          <div className="border-t border-sidebar-border p-4">
-            <Button variant="ghost" className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent">
+          <div className="border-t border-border p-4">
+            <Button variant="ghost" className="w-full justify-start hover:bg-accent">
               <Settings className="mr-3 h-4 w-4" />
               Settings
             </Button>
@@ -217,9 +106,9 @@ export default function ChatInterface() {
       )}
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col overflow-hidden">
         {/* Progress Stepper Header */}
-        <header className="border-b border-border bg-card shadow-sm">
+        <header className="border-b border-border bg-card shadow-sm z-10">
           <div className="flex items-center justify-between px-6 py-4">
             <Button size="icon" variant="ghost" className="lg:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <Menu className="h-5 w-5" />
@@ -266,13 +155,12 @@ export default function ChatInterface() {
         {/* Chat Area */}
         <main className="flex-1 overflow-y-auto px-4 py-8">
           <div className="mx-auto max-w-3xl space-y-6">
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {messages.map((message) => (
                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
                   transition={{ type: "spring", damping: 25, stiffness: 200 }}
                   className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                 >
@@ -282,26 +170,18 @@ export default function ChatInterface() {
                         ? "bg-primary text-primary-foreground"
                         : "backdrop-blur-glass bg-muted/80 text-card-foreground"
                     }`}
-                    style={
-                      message.role === "assistant"
-                        ? {
-                            backdropFilter: "blur(20px)",
-                            WebkitBackdropFilter: "blur(20px)",
-                          }
-                        : undefined
-                    }
                   >
-                    <p className="text-[15px] leading-relaxed">{message.content}</p>
+                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </motion.div>
               ))}
-              {isLoading && (
+              {isLoading && messages[messages.length - 1]?.role === "user" && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="flex justify-start"
                 >
-                  <div className="max-w-[80%] rounded-[24px] bg-muted/80 px-6 py-3 shadow-md backdrop-blur-glass">
+                  <div className="max-w-[80%] rounded-[24px] backdrop-blur-glass bg-muted/80 px-6 py-3 shadow-md">
                     <div className="flex gap-1">
                       <div
                         className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
@@ -325,29 +205,28 @@ export default function ChatInterface() {
         </main>
 
         {/* Input Area */}
-        <div className="sticky bottom-0 border-t border-border bg-background/95 px-4 py-4 backdrop-blur-lg">
+        <div className="border-t border-border bg-background/95 px-4 py-4 backdrop-blur-lg">
           <div className="mx-auto max-w-3xl">
-            <div className="flex items-end gap-3">
+            <form onSubmit={handleSubmit} className="flex items-end gap-3">
               <div className="flex-1 rounded-[24px] bg-muted/50 px-5 py-3 shadow-sm ring-1 ring-border/50 backdrop-blur-sm focus-within:ring-2 focus-within:ring-ring">
                 <input
                   type="text"
-                  placeholder="Type a message..."
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  placeholder="메시지를 입력하세요..."
+                  value={input}
+                  onChange={handleInputChange}
                   disabled={isLoading}
                   className="w-full bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
                 />
               </div>
               <Button
+                type="submit"
                 size="icon"
-                onClick={handleSend}
-                disabled={!inputValue.trim() || isLoading}
+                disabled={!input.trim() || isLoading}
                 className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:bg-primary/90 disabled:opacity-50"
               >
                 <Send className="h-5 w-5" />
               </Button>
-            </div>
+            </form>
           </div>
         </div>
       </div>
