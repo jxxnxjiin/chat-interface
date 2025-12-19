@@ -27,7 +27,17 @@ export default function ChatInterface() {
   const [reportContent, setReportContent] = useState<string | null>(null)
   const [showReportPanel, setShowReportPanel] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [isTyping, setIsTyping] = useState(false);
+
+  // 텍스트 영역 높이 자동 조절
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "inherit"
+      const scrollHeight = textareaRef.current.scrollHeight
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 200)}px`
+    }
+  }, [inputValue])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -59,35 +69,27 @@ export default function ChatInterface() {
   const handleGenerateReport = async () => {
     setIsGeneratingReport(true)
     
-    // 채팅 메시지를 AI에게 알려주는 부분 (나중에 구현)
-    const chatHistory = messages
-      .map((msg) => `${msg.role === "user" ? "사용자" : "AI"}: ${msg.content}`)
-      .join("\n\n")
-    
-    // 임시 보고서 생성 (나중에 AI API로 대체)
-    setTimeout(() => {
-      const tempReport = `# 대화 기반 보고서
+    try {
+      const response = await fetch("/api/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }), // 전체 대화 내역 전송
+      });
 
-## 요약
-이 보고서는 대화 내용을 기반으로 생성되었습니다.
+      const data = await response.json();
 
-## 주요 내용
-- 총 ${messages.length}개의 메시지가 교환되었습니다.
-- 대화 주제: 채팅 및 보고서 시스템 구축
+      if (!response.ok) {
+        throw new Error(data.error || "보고서 생성 실패");
+      }
 
-## 대화 내역
-${chatHistory}
-
-## 결론
-보고서 생성 기능이 성공적으로 작동하고 있습니다.
-
----
-*생성 시각: ${new Date().toLocaleString("ko-KR")}*`
-      
-      setReportContent(tempReport)
-      setIsGeneratingReport(false)
+      setReportContent(data.report)
       setShowReportPanel(true)
-    }, 1500)
+    } catch (error) {
+      console.error("Report Error:", error);
+      alert("보고서 생성 중 오류가 발생했습니다.");
+    } finally {
+      setIsGeneratingReport(false)
+    }
   }
 
   const handleDownloadReport = () => {
@@ -327,24 +329,28 @@ ${chatHistory}
           <div className="mx-auto max-w-3xl">
             <div className="flex items-end gap-3">
               <div className="flex-1 rounded-[24px] bg-muted/50 px-5 py-3 shadow-sm ring-1 ring-border/50 backdrop-blur-sm focus-within:ring-2 focus-within:ring-ring">
-                <input
-                  type="text"
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
                   placeholder="메시지를 입력하세요..."
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="w-full bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  onKeyDown={handleKeyPress}
+                  className="w-full bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none resize-none py-1 min-h-[24px] leading-relaxed"
                 />
               </div>
               <Button
                 size="icon"
                 onClick={handleSend}
-                disabled={!inputValue.trim()}
-                className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:bg-primary/90 disabled:opacity-50"
+                disabled={!inputValue.trim() || isTyping}
+                className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:bg-primary/90 disabled:opacity-50 flex-shrink-0"
               >
                 <Send className="h-5 w-5" />
               </Button>
             </div>
+            <p className="text-[10px] text-muted-foreground mt-2 px-4 text-center">
+              Shift + Enter로 줄바꿈, Enter로 전송
+            </p>
           </div>
         </div>
       </div>
