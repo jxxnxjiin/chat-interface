@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Menu, Send, Plus, Settings, MessageSquare } from "lucide-react"
+import { Menu, Send, Plus, Settings, MessageSquare, FileText, X, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 
 interface Message {
   id: string
@@ -21,6 +23,9 @@ export default function ChatInterface() {
   ])
   const [inputValue, setInputValue] = useState("")
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+  const [reportContent, setReportContent] = useState<string | null>(null)
+  const [showReportPanel, setShowReportPanel] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -69,6 +74,56 @@ export default function ChatInterface() {
         content: "안녕하세요! 무엇을 도와드릴까요?",
       },
     ])
+    setReportContent(null)
+    setShowReportPanel(false)
+  }
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true)
+    
+    // 채팅 메시지를 AI에게 알려주는 부분 (나중에 구현)
+    const chatHistory = messages
+      .map((msg) => `${msg.role === "user" ? "사용자" : "AI"}: ${msg.content}`)
+      .join("\n\n")
+    
+    // 임시 보고서 생성 (나중에 AI API로 대체)
+    setTimeout(() => {
+      const tempReport = `# 대화 기반 보고서
+
+## 요약
+이 보고서는 대화 내용을 기반으로 생성되었습니다.
+
+## 주요 내용
+- 총 ${messages.length}개의 메시지가 교환되었습니다.
+- 대화 주제: 채팅 및 보고서 시스템 구축
+
+## 대화 내역
+${chatHistory}
+
+## 결론
+보고서 생성 기능이 성공적으로 작동하고 있습니다.
+
+---
+*생성 시각: ${new Date().toLocaleString("ko-KR")}*`
+      
+      setReportContent(tempReport)
+      setIsGeneratingReport(false)
+      setShowReportPanel(true)
+    }, 1500)
+  }
+
+  const handleDownloadReport = () => {
+    if (!reportContent) return
+    
+    const blob = new Blob([reportContent], { type: "text/markdown;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `report_${new Date().toISOString().split("T")[0]}.md`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -135,7 +190,7 @@ export default function ChatInterface() {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Progress Stepper Header */}
         <header className="border-b border-border bg-card shadow-sm z-10">
-          <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center justify-between px-6 py-4 gap-4">
             <Button size="icon" variant="ghost" className="lg:hidden" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               <Menu className="h-5 w-5" />
             </Button>
@@ -173,8 +228,29 @@ export default function ChatInterface() {
               </div>
             </div>
 
-            {/* Spacer for alignment */}
-            <div className="w-10 lg:hidden"></div>
+            {/* Report Generation Button */}
+            <Button
+              onClick={handleGenerateReport}
+              disabled={messages.length < 3 || isGeneratingReport}
+              className="hidden sm:flex items-center gap-2"
+              title={messages.length < 3 ? "보고서를 생성하려면 더 많은 대화가 필요합니다" : "대화 내용을 기반으로 보고서 생성"}
+            >
+              <FileText className="h-4 w-4" />
+              <span className="hidden md:inline">
+                {isGeneratingReport ? "생성 중..." : "보고서 생성"}
+              </span>
+            </Button>
+
+            {/* Mobile: Icon only */}
+            <Button
+              size="icon"
+              onClick={handleGenerateReport}
+              disabled={messages.length < 3 || isGeneratingReport}
+              className="sm:hidden"
+              title={messages.length < 3 ? "보고서를 생성하려면 더 많은 대화가 필요합니다" : "대화 내용을 기반으로 보고서 생성"}
+            >
+              <FileText className="h-5 w-5" />
+            </Button>
           </div>
         </header>
 
@@ -232,6 +308,57 @@ export default function ChatInterface() {
           </div>
         </div>
       </div>
+
+      {/* Report Panel */}
+      <AnimatePresence>
+        {showReportPanel && reportContent && (
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowReportPanel(false)}
+            />
+
+            {/* Panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 z-50 h-full w-full sm:w-[600px] lg:w-[800px] bg-background border-l border-border shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Panel Header */}
+              <div className="flex items-center justify-between border-b border-border p-4 bg-card">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  생성된 보고서
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Button onClick={handleDownloadReport} variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    다운로드
+                  </Button>
+                  <Button onClick={() => setShowReportPanel(false)} variant="ghost" size="icon">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Panel Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="prose prose-slate dark:prose-invert max-w-none">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {reportContent}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
