@@ -1,37 +1,25 @@
 "use client"
 
-import { useChat } from "@ai-sdk/react"
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, Send, Plus, Settings, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export default function ChatInterface() {
-  const {
-    messages,
-    input,
-    handleInputChange,
-    handleSubmit,
-    isLoading,
-    setMessages,
-    error,
-  } = useChat({
-    api: "/api/chat",
-    initialMessages: [
-      {
-        id: "1",
-        role: "assistant",
-        content: "안녕하세요! 무엇을 도와드릴까요??",
-      },
-    ],
-    onError: (err) => {
-      console.error("Chat Error:", err)
-    },
-  })
+interface Message {
+  id: string
+  role: "user" | "assistant"
+  content: string
+}
 
+export default function ChatInterface() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      role: "assistant",
+      content: "안녕하세요! 무엇을 도와드릴까요?",
+    },
+  ])
+  const [inputValue, setInputValue] = useState("")
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -42,6 +30,36 @@ export default function ChatInterface() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  const handleSend = () => {
+    if (!inputValue.trim()) return
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: inputValue,
+    }
+
+    setMessages((prev) => [...prev, newMessage])
+    setInputValue("")
+
+    // 임시 응답 (나중에 AI 연결 시 대체)
+    setTimeout(() => {
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "죄송합니다. AI 연결이 아직 설정되지 않았습니다.",
+      }
+      setMessages((prev) => [...prev, aiResponse])
+    }, 500)
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
 
   const handleNewChat = () => {
     setMessages([
@@ -183,49 +201,6 @@ export default function ChatInterface() {
                   </div>
                 </motion.div>
               ))}
-              {isLoading && messages[messages.length - 1]?.role === "user" && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-start"
-                >
-                  <div className="max-w-[80%] rounded-[24px] backdrop-blur-glass bg-muted/80 px-6 py-3 shadow-md">
-                    <div className="flex gap-1">
-                      <div
-                        className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
-                        style={{ animationDelay: "0ms" }}
-                      />
-                      <div
-                        className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
-                        style={{ animationDelay: "150ms" }}
-                      />
-                      <div
-                        className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
-                        style={{ animationDelay: "300ms" }}
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex justify-center"
-                >
-                  <div className="rounded-lg bg-destructive/10 px-4 py-2 text-sm text-destructive border border-destructive/20">
-                    에러가 발생했습니다: {error.message || "알 수 없는 에러"}
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      onClick={() => window.location.reload()}
-                      className="text-destructive underline ml-2"
-                    >
-                      새로고침
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
             </AnimatePresence>
             <div ref={messagesEndRef} />
           </div>
@@ -234,26 +209,26 @@ export default function ChatInterface() {
         {/* Input Area */}
         <div className="border-t border-border bg-background/95 px-4 py-4 backdrop-blur-lg">
           <div className="mx-auto max-w-3xl">
-            <form onSubmit={handleSubmit} className="flex items-end gap-3">
+            <div className="flex items-end gap-3">
               <div className="flex-1 rounded-[24px] bg-muted/50 px-5 py-3 shadow-sm ring-1 ring-border/50 backdrop-blur-sm focus-within:ring-2 focus-within:ring-ring">
                 <input
                   type="text"
                   placeholder="메시지를 입력하세요..."
-                  value={input}
-                  onChange={handleInputChange}
-                  disabled={isLoading}
-                  className="w-full bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="w-full bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none"
                 />
               </div>
               <Button
-                type="submit"
                 size="icon"
-                disabled={!input.trim() || isLoading}
+                onClick={handleSend}
+                disabled={!inputValue.trim()}
                 className="h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-all hover:scale-105 hover:bg-primary/90 disabled:opacity-50"
               >
                 <Send className="h-5 w-5" />
               </Button>
-            </form>
+            </div>
           </div>
         </div>
       </div>
