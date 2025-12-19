@@ -1,6 +1,9 @@
 "use client"
 
-import { useChat } from "ai/react"
+import { useChat } from "@ai-sdk/react"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, Send, Plus, Settings, MessageSquare } from "lucide-react"
