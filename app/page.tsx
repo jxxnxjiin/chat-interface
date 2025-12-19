@@ -231,9 +231,9 @@ ${chatHistory}
             {/* Report Generation Button */}
             <Button
               onClick={handleGenerateReport}
-              disabled={messages.length < 3 || isGeneratingReport}
+              disabled={messages.filter(m => m.role === "user").length < 3 || isGeneratingReport}
               className="hidden sm:flex items-center gap-2"
-              title={messages.length < 3 ? "보고서를 생성하려면 더 많은 대화가 필요합니다" : "대화 내용을 기반으로 보고서 생성"}
+              title={messages.filter(m => m.role === "user").length < 3 ? "보고서를 생성하려면 사용자가 보낸 메시지가 3개 이상 필요합니다" : "대화 내용을 기반으로 보고서 생성"}
             >
               <FileText className="h-4 w-4" />
               <span className="hidden md:inline">
@@ -245,9 +245,9 @@ ${chatHistory}
             <Button
               size="icon"
               onClick={handleGenerateReport}
-              disabled={messages.length < 3 || isGeneratingReport}
+              disabled={messages.filter(m => m.role === "user").length < 3 || isGeneratingReport}
               className="sm:hidden"
-              title={messages.length < 3 ? "보고서를 생성하려면 더 많은 대화가 필요합니다" : "대화 내용을 기반으로 보고서 생성"}
+              title={messages.filter(m => m.role === "user").length < 3 ? "보고서를 생성하려면 사용자가 보낸 메시지가 3개 이상 필요합니다" : "대화 내용을 기반으로 보고서 생성"}
             >
               <FileText className="h-5 w-5" />
             </Button>
