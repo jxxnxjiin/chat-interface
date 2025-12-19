@@ -18,7 +18,7 @@ export default function ChatInterface() {
     {
       id: "1",
       role: "assistant",
-      content: "안녕하세요! 무엇을 도와드릴까요?",
+      content: "안녕하세요! 오늘 해결하고 싶은 업무나, 머릿속을 맴도는 아이디어가 있으신가요?",
     },
   ])
   const [inputValue, setInputValue] = useState("")
