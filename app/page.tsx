@@ -14,7 +14,9 @@ export default function ChatInterface() {
     handleSubmit,
     isLoading,
     setMessages,
+    error,
   } = useChat({
+    api: "/api/chat",
     initialMessages: [
       {
         id: "1",
@@ -22,6 +24,9 @@ export default function ChatInterface() {
         content: "안녕하세요! 무엇을 도와드릴까요?",
       },
     ],
+    onError: (err) => {
+      console.error("Chat Error:", err)
+    },
   })
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -196,6 +201,25 @@ export default function ChatInterface() {
                         style={{ animationDelay: "300ms" }}
                       />
                     </div>
+                  </div>
+                </motion.div>
+              )}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-center"
+                >
+                  <div className="rounded-lg bg-destructive/10 px-4 py-2 text-sm text-destructive border border-destructive/20">
+                    에러가 발생했습니다: {error.message || "알 수 없는 에러"}
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      onClick={() => window.location.reload()}
+                      className="text-destructive underline ml-2"
+                    >
+                      새로고침
+                    </Button>
                   </div>
                 </motion.div>
               )}
