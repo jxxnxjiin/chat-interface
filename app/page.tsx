@@ -291,7 +291,13 @@ export default function ChatInterface() {
                         : "backdrop-blur-glass bg-muted/80 text-card-foreground"
                     }`}
                   >
-                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                    <div className={`text-[15px] leading-relaxed prose prose-sm max-w-none ${
+                      message.role === "user" ? "prose-invert" : "dark:prose-invert"
+                    }`}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </motion.div>
               ))}
