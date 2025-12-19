@@ -27,6 +27,7 @@ export default function ChatInterface() {
   const [reportContent, setReportContent] = useState<string | null>(null)
   const [showReportPanel, setShowReportPanel] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isTyping, setIsTyping] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -35,29 +36,6 @@ export default function ChatInterface() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
-
-  const handleSend = () => {
-    if (!inputValue.trim()) return
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue,
-    }
-
-    setMessages((prev) => [...prev, newMessage])
-    setInputValue("")
-
-    // 임시 응답 (나중에 AI 연결 시 대체)
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "죄송합니다. AI 연결이 아직 설정되지 않았습니다.",
-      }
-      setMessages((prev) => [...prev, aiResponse])
-    }, 500)
-  }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -124,7 +102,45 @@ ${chatHistory}
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  }
+  };
+
+  const handleSend = async () => {
+    if (!inputValue.trim() || isTyping) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: inputValue,
+    };
+
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setInputValue("");
+    setIsTyping(true); // AI 답변 대기 시작
+
+    try {
+      // ✅ 우리가 만든 API(/api/chat) 호출
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages }), // 전체 메시지 내역 전송
+      });
+
+      const data = await response.json();
+
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.reply || data.error,
+      };
+
+      setMessages((prev) => [...prev, aiResponse]);
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setIsTyping(false); // 로딩 종료
+    }
+  };
 
   return (
     <div className="flex h-screen bg-background text-foreground">
@@ -277,6 +293,30 @@ ${chatHistory}
                   </div>
                 </motion.div>
               ))}
+              {isTyping && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-start"
+                >
+                  <div className="max-w-[80%] rounded-[24px] bg-muted/80 px-6 py-3 shadow-md backdrop-blur-glass">
+                    <div className="flex gap-1">
+                      <div
+                        className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
+                        style={{ animationDelay: "0ms" }}
+                      />
+                      <div
+                        className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
+                        style={{ animationDelay: "150ms" }}
+                      />
+                      <div
+                        className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
+                        style={{ animationDelay: "300ms" }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
             <div ref={messagesEndRef} />
           </div>
