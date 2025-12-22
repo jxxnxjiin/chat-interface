@@ -211,7 +211,7 @@ export default function InitiationPage() {
                           : "bg-card text-foreground border border-border"
                       }`}
                     >
-                      <div className={`text-[15px] leading-relaxed prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 ${
+                      <div className={`text-[15px] leading-relaxed prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>ul]:ml-0 [&>ol]:ml-0 [&>blockquote]:ml-0 [&>*]:px-0 ${
                         message.role === "user" ? "prose-invert" : "dark:prose-invert"
                       }`}>
                         <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
