@@ -181,7 +181,7 @@ export default function InitiationPage() {
                 </div>
                 <div>
                   <h1 className="text-lg font-bold tracking-tight">업무 이니시에이터</h1>
-                  <p className="text-xs text-muted-foreground font-medium">Gemini 2.0 Flash</p>
+                  <p className="text-xs text-muted-foreground font-medium">Gemini 2.5 Flash</p>
                 </div>
               </div>
             </div>
