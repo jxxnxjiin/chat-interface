@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
   Plus, 
@@ -98,14 +98,29 @@ const initialProjects: Project[] = [
 ]
 
 export default function DashboardPage() {
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
+  const [projects, setProjects] = useState<Project[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("chat-projects")
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    }
+    return initialProjects
+  })
   const [isCreating, setIsCreating] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
   const [showArchived, setShowArchived] = useState(false)
 
+  // localStorage에 projects 저장
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("chat-projects", JSON.stringify(projects))
+    }
+  }, [projects])
+
   const handleCreateProject = () => {
     if (!newProjectName.trim()) return
-    
+
     const newProject: Project = {
       id: Date.now().toString(),
       name: newProjectName.trim(),
@@ -113,8 +128,14 @@ export default function DashboardPage() {
       createdAt: new Date().toISOString().split("T")[0],
       updatedAt: new Date().toISOString().split("T")[0],
     }
-    
+
     setProjects(prev => [newProject, ...prev])
+
+    // 새로 생성한 프로젝트를 현재 프로젝트로 설정
+    if (typeof window !== "undefined") {
+      localStorage.setItem("chat-current-project", JSON.stringify(newProject))
+    }
+
     setNewProjectName("")
     setIsCreating(false)
   }
@@ -234,7 +255,15 @@ export default function DashboardPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <Link href={config.href}>
+                    <Link
+                      href={config.href}
+                      onClick={() => {
+                        // 현재 프로젝트 정보를 localStorage에 저장
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem("chat-current-project", JSON.stringify(project))
+                        }
+                      }}
+                    >
                       <div className="group p-5 bg-card rounded-xl border border-border hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">

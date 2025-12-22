@@ -10,19 +10,66 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkBreaks from "remark-breaks"
 
+// 현재 프로젝트 ID 가져오기
+const getCurrentProjectId = () => {
+  if (typeof window === "undefined") return "default"
+  try {
+    const currentProject = localStorage.getItem("chat-current-project")
+    if (currentProject) {
+      const project = JSON.parse(currentProject)
+      return project.id || "default"
+    }
+  } catch (e) {
+    console.error("Failed to get current project:", e)
+  }
+  return "default"
+}
+
 export function CustomRecommendationsView() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: "안녕하세요!\n\n어떤 작업을 하시나요? 맞춤형 도구를 추천해드릴게요. 🔍",
-    },
-  ])
+  const projectId = getCurrentProjectId()
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`chat-${projectId}-recommendations-messages`)
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    }
+    return [
+      {
+        id: "1",
+        role: "assistant",
+        content: "안녕하세요!\n\n어떤 작업을 하시나요? 맞춤형 도구를 추천해드릴게요. 🔍",
+      },
+    ]
+  })
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
-  const [recommendedTools, setRecommendedTools] = useState<RecommendedTool[]>([])
+  const [recommendedTools, setRecommendedTools] = useState<RecommendedTool[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`chat-${projectId}-recommendations-tools`)
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    }
+    return []
+  })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // localStorage에 messages 저장
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`chat-${projectId}-recommendations-messages`, JSON.stringify(messages))
+    }
+  }, [messages, projectId])
+
+  // localStorage에 recommendedTools 저장
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`chat-${projectId}-recommendations-tools`, JSON.stringify(recommendedTools))
+    }
+  }, [recommendedTools, projectId])
 
   useEffect(() => {
     if (textareaRef.current) {

@@ -188,3 +188,7 @@ export const TOOL_RECOMMENDATION_PROMPT = `
 - **중요: 이미 추천한 도구는 다시 'tools' 배열에 포함하지 마세요.** 대화 내역을 확인하여 중복을 피하세요.
 `;
 
+export const TOOL_REPORT_PROMPT = `
+사용자의 프로젝트 계획을 확인하고, 사용자에게 적합한 AI 툴을 추천해주세요.
+
+`

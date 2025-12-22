@@ -17,34 +17,81 @@ interface PlanData {
   resources: string
 }
 
+// 현재 프로젝트 ID 가져오기
+const getCurrentProjectId = () => {
+  if (typeof window === "undefined") return "default"
+  try {
+    const currentProject = localStorage.getItem("chat-current-project")
+    if (currentProject) {
+      const project = JSON.parse(currentProject)
+      return project.id || "default"
+    }
+  } catch (e) {
+    console.error("Failed to get current project:", e)
+  }
+  return "default"
+}
+
 export default function InitiationPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: `안녕하세요! 👋 
-이번 프로젝트의 목표는 무엇인가요? 
+  const projectId = getCurrentProjectId()
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`chat-${projectId}-initiation-messages`)
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    }
+    return [
+      {
+        id: "1",
+        role: "assistant",
+        content: `안녕하세요! 👋
+이번 프로젝트의 목표는 무엇인가요?
 
 편하게 말씀해 주시면 제가 구체적인 계획 수립을 도와드릴게요. 😊`,
-    },
-  ])
+      },
+    ]
+  })
   const [inputValue, setInputValue] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [isTyping, setIsTyping] = useState(false)
-  
+
   // 실시간 기획안 데이터
-  const [planData, setPlanData] = useState<PlanData>({
-    reason: "",
-    goal: "",
-    detailedPlan: "",
-    resources: "",
+  const [planData, setPlanData] = useState<PlanData>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`chat-${projectId}-initiation-planData`)
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    }
+    return {
+      reason: "",
+      goal: "",
+      detailedPlan: "",
+      resources: "",
+    }
   })
 
   // 보고서 관련 state
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
   const [reportContent, setReportContent] = useState<string | null>(null)
   const [showReportPanel, setShowReportPanel] = useState(false)
+
+  // localStorage에 messages 저장
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`chat-${projectId}-initiation-messages`, JSON.stringify(messages))
+    }
+  }, [messages, projectId])
+
+  // localStorage에 planData 저장
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`chat-${projectId}-initiation-planData`, JSON.stringify(planData))
+    }
+  }, [planData, projectId])
 
   // 텍스트 영역 높이 자동 조절
   useEffect(() => {
