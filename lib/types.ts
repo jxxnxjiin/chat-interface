@@ -29,5 +29,5 @@ export interface ToolCategory {
   }[]
 }
 
-export type MenuItem = "timeline" | "today" | "ai-tools" | "settings"
+export type MenuItem = "timeline" | "today" | "ai-tools"
 

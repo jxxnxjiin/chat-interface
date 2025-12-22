@@ -2,6 +2,5 @@
 export { TimelineView } from "./TimelineView"
 export { TodayView } from "./TodayView"
 export { AIToolsView } from "./AIToolsView"
-export { SettingsView } from "./SettingsView"
 export { TaskItem } from "./TaskItem"
 
