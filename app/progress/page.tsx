@@ -9,7 +9,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { Task, MenuItem } from "@/lib/types"
-import { StepNavigation } from "@/components/shared/StepNavigation"
+import { StepNavigation, EditableTitle } from "@/components/shared"
 import { TimelineView, TodayView, AIToolsView, SettingsView } from "@/components/progress"
 
 // 사이드바 메뉴 아이템
@@ -45,6 +45,7 @@ const initialTasks: Task[] = [
 export default function ProgressPage() {
   const [activeMenu, setActiveMenu] = useState<MenuItem>("today")
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
+  const [projectName, setProjectName] = useState("새 프로젝트")
 
   const toggleTask = (taskId: string) => {
     setTasks(prev => prev.map(task => 
@@ -73,9 +74,14 @@ export default function ProgressPage() {
         {/* Sidebar */}
         <aside className="w-64 border-r border-border bg-muted/30 flex flex-col">
           {/* Logo / Project Name */}
-          <div className="p-6 border-b border-border">
-            <h1 className="text-lg font-semibold text-foreground">프로젝트명</h1>
-            <p className="text-sm text-muted-foreground mt-1">In Progress</p>
+          <div className="p-4 border-b border-border">
+            <EditableTitle 
+              value={projectName} 
+              onChange={setProjectName}
+              placeholder="프로젝트명 입력"
+              size="sm"
+            />
+            <p className="text-xs text-muted-foreground mt-1">In Progress</p>
           </div>
 
           {/* Navigation */}

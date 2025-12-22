@@ -7,7 +7,7 @@ export function generateSuccessReport(projectName?: string): string {
 | 항목 | 내용 |
 |------|------|
 | **프로젝트명** | ${projectName || "[프로젝트명]"} |
-| **기간** | 2024.12.01 ~ 2024.12.22 |
+| **기간** | 2025.12.01 ~ 2025.12.22 |
 | **결과** | ✅ 성공 |
 
 ---
