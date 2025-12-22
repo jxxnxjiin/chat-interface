@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { Sparkles, Upload } from "lucide-react"
+import { Sparkles, Upload, File, X } from "lucide-react"
 
 export type SubmissionMethod = "ai" | "upload" | null
 
@@ -10,14 +10,23 @@ interface SubmissionStepProps {
   onSelect: (method: SubmissionMethod) => void
   uploadedContent: string
   onUploadedContentChange: (content: string) => void
+  uploadedFile: File | null
+  onUploadedFileChange: (file: File | null) => void
 }
 
 export function SubmissionStep({ 
   submissionMethod, 
   onSelect, 
   uploadedContent, 
-  onUploadedContentChange 
+  onUploadedContentChange,
+  uploadedFile,
+  onUploadedFileChange
 }: SubmissionStepProps) {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+    onUploadedFileChange(file)
+  }
+
   return (
     <motion.div
       key="step2"
@@ -64,27 +73,65 @@ export function SubmissionStep({
             <span className="text-xl font-semibold">직접 업로드</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            직접 작성한 결과물이나 회고 내용을 입력하여 구조화된 리포트로 변환합니다.
+            직접 작성한 결과물이나 파일을 업로드하여 구조화된 리포트로 변환합니다.
           </p>
         </button>
       </div>
 
-      {/* 직접 업로드 선택 시 텍스트 입력 영역 */}
+      {/* 직접 업로드 선택 시 입력 영역 */}
       <AnimatePresence>
         {submissionMethod === "upload" && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="space-y-3"
+            className="space-y-6"
           >
-            <label className="text-sm font-medium">결과물 / 회고 내용</label>
-            <textarea
-              value={uploadedContent}
-              onChange={(e) => onUploadedContentChange(e.target.value)}
-              placeholder="프로젝트 결과, 배운 점, 개선할 점 등을 자유롭게 작성해주세요..."
-              className="w-full h-40 p-4 rounded-xl border border-border bg-muted/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+            {/* 파일 업로드 섹션 */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">파일 업로드</label>
+              {!uploadedFile ? (
+                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-xl hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground">파일을 선택하거나 드래그하세요</p>
+                    <p className="text-xs text-muted-foreground mt-1">PDF, DOCX, TXT 등</p>
+                  </div>
+                  <input type="file" className="hidden" onChange={handleFileChange} />
+                </label>
+              ) : (
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <File className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{uploadedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(uploadedFile.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => onUploadedFileChange(null)}
+                    className="p-2 hover:bg-muted rounded-full transition-colors"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 텍스트 입력 섹션 */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">직접 작성 (선택사항)</label>
+              <textarea
+                value={uploadedContent}
+                onChange={(e) => onUploadedContentChange(e.target.value)}
+                placeholder="프로젝트 결과, 배운 점, 개선할 점 등을 자유롭게 작성해주세요..."
+                className="w-full h-40 p-4 rounded-xl border border-border bg-muted/50 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

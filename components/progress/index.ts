@@ -3,4 +3,5 @@ export { TimelineView } from "./TimelineView"
 export { TodayView } from "./TodayView"
 export { AIToolsView } from "./AIToolsView"
 export { TaskItem } from "./TaskItem"
+export { CustomRecommendationsView } from "./CustomRecommendationsView"
 

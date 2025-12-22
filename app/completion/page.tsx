@@ -23,12 +23,15 @@ export default function CompletionPage() {
   const [projectResult, setProjectResult] = useState<ProjectResult>(null)
   const [submissionMethod, setSubmissionMethod] = useState<SubmissionMethod>(null)
   const [uploadedContent, setUploadedContent] = useState("")
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [generatedReport, setGeneratedReport] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [showReportPanel, setShowReportPanel] = useState(false)
 
   const canProceedToStep2 = projectResult !== null
-  const canProceedToStep3 = submissionMethod !== null
+  const canProceedToStep3 = 
+    submissionMethod === "ai" || 
+    (submissionMethod === "upload" && (uploadedContent.trim() !== "" || uploadedFile !== null))
 
   const handleNextStep = () => {
     if (wizardStep === 1 && canProceedToStep2) {
@@ -123,6 +126,8 @@ export default function CompletionPage() {
                 onSelect={setSubmissionMethod}
                 uploadedContent={uploadedContent}
                 onUploadedContentChange={setUploadedContent}
+                uploadedFile={uploadedFile}
+                onUploadedFileChange={setUploadedFile}
               />
             )}
 

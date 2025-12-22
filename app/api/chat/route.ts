@@ -6,18 +6,23 @@ import { SYSTEM_PROMPT, REPORT_TEMPLATE } from "@/lib/prompts";
 const apiKey = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
 
+<<<<<<< HEAD
 // 1. 반환받을 JSON의 구조(Schema)를 정의합니다.
 const schema = {
   description: "Chat response and report updates",
+=======
+// JSON 응답 스키마 정의
+const responseSchema = {
+>>>>>>> 53b65b0db487f30eb459750411c61e5536bab84b
   type: SchemaType.OBJECT as const,
   properties: {
     reply: {
       type: SchemaType.STRING as const,
-      description: "사용자에게 보여줄 직접적인 대화 답변",
+      description: "사용자에게 보여줄 대화 답변",
     },
     report: {
       type: SchemaType.OBJECT as const,
-      description: "우측 리포트 패널에 들어갈 정보",
+      description: "실시간 기획안에 반영할 데이터",
       properties: {
         reason: { type: SchemaType.STRING as const, description: "기획 배경" },
         goal: { type: SchemaType.STRING as const, description: "목표" },

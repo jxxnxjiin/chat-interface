@@ -1,21 +1,22 @@
 "use client"
 
-import { useState } from "react"
-import { 
-  Calendar, 
-  CheckSquare, 
-  Sparkles, 
+import { useState, useEffect } from "react"
+import {
+  Calendar,
+  CheckSquare,
+  Sparkles,
   ChevronRight,
 } from "lucide-react"
 import { Task, MenuItem } from "@/lib/types"
 import { StepNavigation } from "@/components/shared"
-import { TimelineView, TodayView, AIToolsView } from "@/components/progress"
+import { TimelineView, TodayView, AIToolsView, CustomRecommendationsView } from "@/components/progress"
 
 // 사이드바 메뉴 아이템
 const menuItems = [
   { id: "timeline" as MenuItem, label: "프로젝트 타임라인", icon: Calendar },
   { id: "today" as MenuItem, label: "오늘 할 일", icon: CheckSquare },
-  { id: "ai-tools" as MenuItem, label: "AI 도구 추천", icon: Sparkles },
+  { id: "ai-tools" as MenuItem, label: "추천 도구 목록", icon: Sparkles },
+  { id: "custom-recommendations" as MenuItem, label: "맞춤 추천", icon: Sparkles },
 ]
 
 // 초기 할 일 데이터
@@ -40,12 +41,58 @@ const initialTasks: Task[] = [
   },
 ]
 
+// 현재 프로젝트 ID 가져오기
+const getCurrentProjectId = () => {
+  if (typeof window === "undefined") return "default"
+  try {
+    const currentProject = localStorage.getItem("chat-current-project")
+    if (currentProject) {
+      const project = JSON.parse(currentProject)
+      return project.id || "default"
+    }
+  } catch (e) {
+    console.error("Failed to get current project:", e)
+  }
+  return "default"
+}
+
 export default function ProgressPage() {
+  const projectId = getCurrentProjectId()
   const [activeMenu, setActiveMenu] = useState<MenuItem>("today")
-  const [tasks, setTasks] = useState<Task[]>(initialTasks)
+  const [projectName, setProjectName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      // 현재 프로젝트 정보에서 이름 가져오기
+      const currentProject = localStorage.getItem("chat-current-project")
+      if (currentProject) {
+        try {
+          const project = JSON.parse(currentProject)
+          return project.name || "프로젝트명"
+        } catch (e) {
+          console.error("Failed to parse current project:", e)
+        }
+      }
+    }
+    return "프로젝트명"
+  })
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`chat-${projectId}-progress-tasks`)
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    }
+    return initialTasks
+  })
+
+  // localStorage에 tasks 저장
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`chat-${projectId}-progress-tasks`, JSON.stringify(tasks))
+    }
+  }, [tasks, projectId])
 
   const toggleTask = (taskId: string) => {
-    setTasks(prev => prev.map(task => 
+    setTasks(prev => prev.map(task =>
       task.id === taskId ? { ...task, completed: !task.completed } : task
     ))
   }
@@ -71,8 +118,8 @@ export default function ProgressPage() {
         {/* Sidebar */}
         <aside className="w-64 border-r border-border bg-muted/30 flex flex-col">
           {/* Project Info */}
-          <div className="p-4 border-b border-border">
-            <h2 className="font-semibold text-foreground">프로젝트명</h2>
+          <div className="px-4 py-6">
+            <h2 className="font-semibold text-foreground">{projectName}</h2>
             <p className="text-xs text-muted-foreground mt-1">In Progress</p>
           </div>
 
@@ -100,7 +147,7 @@ export default function ProgressPage() {
           </nav>
 
           {/* Bottom Info */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4">
             <p className="text-xs text-muted-foreground">
               마감일: 2025-01-15
             </p>
@@ -123,6 +170,7 @@ export default function ProgressPage() {
               <TodayView tasks={tasks} onToggle={toggleTask} onAddTask={addTask} />
             )}
             {activeMenu === "ai-tools" && <AIToolsView />}
+            {activeMenu === "custom-recommendations" && <CustomRecommendationsView />}
           </div>
         </main>
       </div>
