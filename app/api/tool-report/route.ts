@@ -3,21 +3,20 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { TOOL_REPORT_PROMPT } from "@/lib/prompts";
 
-// API 키 초기화 (환경변수 체크는 실행 시 에러로 잡히므로 간소화)
+// API 키 초기화
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || "");
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    // 1. 모델 설정 (현재 최신 Flash 모델명은 'gemini-1.5-flash'입니다)
+    // 1. 모델 설정 
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash", 
       systemInstruction: TOOL_REPORT_PROMPT,
     });
 
     // 2. History 포맷
-    // 마지막 메시지는 sendMessage의 인자로 써야 하므로 분리합니다.
     const lastMessage = messages[messages.length - 1];
     const history = messages.slice(0, -1).map((msg: any) => ({
       role: msg.role === "user" ? "user" : "model",

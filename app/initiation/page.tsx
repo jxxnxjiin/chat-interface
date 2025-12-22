@@ -303,7 +303,7 @@ export default function InitiationPage() {
           </div>
         </main>
 
-        {/* Sidebar: Real-time Plan Panel (Attached to Right) */}
+        {/* Sidebar: Real-time Plan Panel (Attached to Right)
         <aside className="w-[380px] flex-shrink-0 flex flex-col bg-muted/30 border-l border-border z-10 shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.1)]">
           <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-card/50 backdrop-blur-sm">
             <div className="flex items-center gap-2.5">
@@ -330,7 +330,7 @@ export default function InitiationPage() {
                 </>
               )}
             </Button>
-          </div>
+          </div> */}
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
             {/* 기획 배경 */}
