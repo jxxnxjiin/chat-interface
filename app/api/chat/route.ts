@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     const response = await result.response;
     const text = response.text();
 
-    console.log("DEBUG: Raw Gemini response:", text);
+    // console.log("DEBUG: Raw Gemini response:", text);
 
     // JSON 파싱
     try {

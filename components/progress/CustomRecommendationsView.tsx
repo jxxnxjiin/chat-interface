@@ -15,7 +15,9 @@ export function CustomRecommendationsView() {
     {
       id: "1",
       role: "assistant",
-      content: "안녕하세요! 어떤 작업을 하시나요? 맞춤형 도구를 추천해드릴게요.",
+      content: `안녕하세요! 어떤 작업을 하시나요? 
+      
+      맞춤형 도구를 추천해드릴게요. 🔧🔨🔬`,
     },
   ])
   const [inputValue, setInputValue] = useState("")
