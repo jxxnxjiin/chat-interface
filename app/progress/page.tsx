@@ -72,7 +72,7 @@ export default function ProgressPage() {
         {/* Sidebar */}
         <aside className="w-64 border-r border-border bg-muted/30 flex flex-col">
           {/* Project Info */}
-          <div className="p-4 border-b border-border">
+          <div className="px-4 py-6">
             <h2 className="font-semibold text-foreground">프로젝트명</h2>
             <p className="text-xs text-muted-foreground mt-1">In Progress</p>
           </div>
@@ -101,7 +101,7 @@ export default function ProgressPage() {
           </nav>
 
           {/* Bottom Info */}
-          <div className="p-4 border-t border-border">
+          <div className="p-4">
             <p className="text-xs text-muted-foreground">
               마감일: 2025-01-15
             </p>
