@@ -9,13 +9,14 @@ import {
 } from "lucide-react"
 import { Task, MenuItem } from "@/lib/types"
 import { StepNavigation } from "@/components/shared"
-import { TimelineView, TodayView, AIToolsView } from "@/components/progress"
+import { TimelineView, TodayView, AIToolsView, CustomRecommendationsView } from "@/components/progress"
 
 // 사이드바 메뉴 아이템
 const menuItems = [
   { id: "timeline" as MenuItem, label: "프로젝트 타임라인", icon: Calendar },
   { id: "today" as MenuItem, label: "오늘 할 일", icon: CheckSquare },
-  { id: "ai-tools" as MenuItem, label: "AI 도구 추천", icon: Sparkles },
+  { id: "ai-tools" as MenuItem, label: "추천 도구 목록", icon: Sparkles },
+  { id: "custom-recommendations" as MenuItem, label: "맞춤 추천", icon: Sparkles },
 ]
 
 // 초기 할 일 데이터
@@ -123,6 +124,7 @@ export default function ProgressPage() {
               <TodayView tasks={tasks} onToggle={toggleTask} onAddTask={addTask} />
             )}
             {activeMenu === "ai-tools" && <AIToolsView />}
+            {activeMenu === "custom-recommendations" && <CustomRecommendationsView />}
           </div>
         </main>
       </div>

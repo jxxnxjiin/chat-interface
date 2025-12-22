@@ -29,7 +29,7 @@ export interface ToolCategory {
   }[]
 }
 
-export type MenuItem = "timeline" | "today" | "ai-tools"
+export type MenuItem = "timeline" | "today" | "ai-tools" | "custom-recommendations"
 
 // 간트 차트 아이템
 export interface GanttItem {
@@ -38,4 +38,12 @@ export interface GanttItem {
   startDate: string // YYYY-MM-DD
   endDate: string   // YYYY-MM-DD
   color: string
+}
+
+// AI 추천 도구
+export interface RecommendedTool {
+  id: string
+  tool_name: string
+  description: string
+  url: string
 }
