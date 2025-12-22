@@ -169,15 +169,44 @@
   line-height: 1.75;
 }
 
-.prose ul, .prose ol {
+.prose ul {
   margin-top: 1.25em;
   margin-bottom: 1.25em;
   padding-left: 1.625em;
+  list-style-type: disc;
+}
+
+.prose ol {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  padding-left: 1.625em;
+  list-style-type: decimal;
+}
+
+.prose ul ul {
+  list-style-type: circle;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose ul ul ul {
+  list-style-type: square;
+}
+
+.prose ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
 }
 
 .prose li {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
+  padding-left: 0.375em;
+}
+
+.prose li::marker {
+  color: var(--color-muted-foreground);
 }
 
 .prose code {

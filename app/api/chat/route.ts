@@ -1,65 +1,72 @@
 // app/api/chat/route.ts
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-import { SYSTEM_PROMPT } from "@/lib/prompts";
+import { SYSTEM_PROMPT, REPORT_TEMPLATE } from "@/lib/prompts";
 
 const apiKey = process.env.GOOGLE_API_KEY;
-
 const genAI = new GoogleGenerativeAI(apiKey || "");
+
+// 1. 반환받을 JSON의 구조(Schema)를 정의합니다.
+const schema = {
+  description: "Chat response and report updates",
+  type: SchemaType.OBJECT as const,
+  properties: {
+    reply: {
+      type: SchemaType.STRING as const,
+      description: "사용자에게 보여줄 직접적인 대화 답변",
+    },
+    report: {
+      type: SchemaType.OBJECT as const,
+      description: "우측 리포트 패널에 들어갈 정보",
+      properties: {
+        reason: { type: SchemaType.STRING as const, description: "기획 배경" },
+        goal: { type: SchemaType.STRING as const, description: "목표" },
+        detailedPlan: { type: SchemaType.STRING as const, description: "상세 계획" },
+        resources: { type: SchemaType.STRING as const, description: "필요 자원" },
+      },
+    },
+  },
+  required: ["reply"], // reply는 필수, report는 선택적으로 생성 가능
+};
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { messages } = body;
+    const { messages } = await req.json();
+    if (!apiKey) return NextResponse.json({ error: "API Key Missing" }, { status: 500 });
 
-    if (!apiKey) {
-      console.error("ERROR: GOOGLE_API_KEY is missing");
-      return NextResponse.json({ error: "API 키가 설정되지 않았습니다." }, { status: 500 });
-    }
-
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return NextResponse.json({ error: "잘못된 요청 형식입니다." }, { status: 400 });
-    }
-
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash", // 최신 모델
       systemInstruction: SYSTEM_PROMPT,
+      // 2. 생성 설정에 JSON 모드와 스키마를 추가합니다.
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: schema,
+      },
     });
 
-    // 대화 내역(history) 설정
-    // 구글 API 규칙: 첫 번째 메시지는 반드시 'user'여야 함
-    // AI의 첫 인사를 제외하기 위해 첫 번째 메시지가 'model'이면 필터링하거나 무시합니다.
+    // 히스토리 구성 (기존 코드 로직 유지)
     let history = messages.slice(0, -1).map((msg: any) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
+    if (history.length > 0 && history[0].role === "model") history = history.slice(1);
 
-    // 첫 번째 메시지가 'model'인 경우 제거
-    if (history.length > 0 && history[0].role === "model") {
-      history = history.slice(1);
-    }
-    
     const lastMessage = messages[messages.length - 1].content;
-
-    console.log(`DEBUG: Sending message to Gemini. Validated History: ${history.length} items`);
-
     const chat = model.startChat({ history });
     const result = await chat.sendMessage(lastMessage);
-    const response = await result.response;
-    const text = response.text();
-
-    return NextResponse.json({ reply: text });
-  } catch (error: any) {
-    // 구글 API에서 보낸 상세 에러 로그 출력
-    console.error("Detailed Gemini API Error:", error);
     
-    // 모델명 오류인 경우 사용자가 알 수 있게 메시지 구성
-    const errorMessage = error.message?.includes("not found") 
-      ? "모델명을 찾을 수 없습니다 (gemini-2.5-flash 확인 필요)" 
-      : "AI 응답 생성 중 오류가 발생했습니다.";
+    // 3. 결과값을 파싱하여 JSON으로 반환합니다.
+    const responseText = result.response.text();
+    console.log("Raw Gemini Response:", responseText); // 디버깅용 로그
+    
+    const parsedResponse = JSON.parse(responseText);
 
+    return NextResponse.json(parsedResponse);
+  } catch (error: any) {
+    console.error("Gemini Error:", error);
+    console.error("Error details:", error.message);
     return NextResponse.json({ 
-      error: errorMessage,
+      error: "에러가 발생했습니다.", 
       details: error.message 
     }, { status: 500 });
   }
