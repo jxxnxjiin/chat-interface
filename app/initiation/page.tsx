@@ -361,7 +361,7 @@ export default function InitiationPage() {
                   <p className="font-bold text-xs text-primary tracking-tight">AI 인텔리전스 가이드</p>
                 </div>
                 <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                  대화 내용이 깊어질수록 기획안이 더 정교하게 업데이트됩니다. 준비가 되셨다면 <strong>[보고서 생성]</strong>을 눌러 리포트를 생성하세요.
+                  대화 내용이 깊어질수록 기획안이 더 정교하게 업데이트됩니다. <strong>[보고서 생성]</strong>을 눌러 구체적인 리포트를 생성하실 수 있습니다.
                 </p>
               </div>
             </div>
