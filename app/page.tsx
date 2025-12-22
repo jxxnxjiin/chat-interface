@@ -2,16 +2,12 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Menu, Send, Plus, Settings, MessageSquare, FileText, X, Download } from "lucide-react"
+import { Menu, Send, Plus, Settings, MessageSquare, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { StepNavigation, SlidePanel, TypingIndicator } from "@/components/shared"
+import { Message } from "@/lib/types"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-
-interface Message {
-  id: string
-  role: "user" | "assistant"
-  content: string
-}
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
@@ -214,36 +210,8 @@ export default function ChatInterface() {
             </Button>
 
             {/* 3-Step Progress Stepper */}
-            <div className="flex flex-1 items-center justify-center gap-2 sm:gap-4">
-              {/* Step 1: Initiation - Active */}
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
-                  <span className="text-sm font-semibold">1</span>
-                </div>
-                <span className="hidden text-sm font-medium text-foreground sm:inline">Initiation</span>
-              </div>
-
-              {/* Connector */}
-              <div className="h-0.5 w-12 bg-border sm:w-20"></div>
-
-              {/* Step 2: In Progress - Inactive */}
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <span className="text-sm font-semibold">2</span>
-                </div>
-                <span className="hidden text-sm text-muted-foreground sm:inline">In Progress</span>
-              </div>
-
-              {/* Connector */}
-              <div className="h-0.5 w-12 bg-border sm:w-20"></div>
-
-              {/* Step 3: Completion - Inactive */}
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <span className="text-sm font-semibold">3</span>
-                </div>
-                <span className="hidden text-sm text-muted-foreground sm:inline">Completion</span>
-              </div>
+            <div className="flex flex-1 items-center justify-center">
+              <StepNavigation currentStep={1} />
             </div>
 
             {/* Report Generation Button */}
@@ -301,30 +269,7 @@ export default function ChatInterface() {
                   </div>
                 </motion.div>
               ))}
-              {isTyping && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-start"
-                >
-                  <div className="max-w-[80%] rounded-[24px] bg-muted/80 px-6 py-3 shadow-md backdrop-blur-glass">
-                    <div className="flex gap-1">
-                      <div
-                        className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
-                        style={{ animationDelay: "0ms" }}
-                      />
-                      <div
-                        className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
-                        style={{ animationDelay: "150ms" }}
-                      />
-                      <div
-                        className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground/50"
-                        style={{ animationDelay: "300ms" }}
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+              {isTyping && <TypingIndicator />}
             </AnimatePresence>
             <div ref={messagesEndRef} />
           </div>
@@ -364,51 +309,24 @@ export default function ChatInterface() {
       {/* Report Panel */}
       <AnimatePresence>
         {showReportPanel && reportContent && (
-          <>
-            {/* Overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-              onClick={() => setShowReportPanel(false)}
-            />
-
-            {/* Panel */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 z-50 h-full w-full sm:w-[600px] lg:w-[800px] bg-background border-l border-border shadow-2xl overflow-hidden flex flex-col"
-            >
-              {/* Panel Header */}
-              <div className="flex items-center justify-between border-b border-border p-4 bg-card">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  생성된 보고서
-                </h2>
-                <div className="flex items-center gap-2">
-                  <Button onClick={handleDownloadReport} variant="outline" size="sm">
-                    <Download className="h-4 w-4 mr-2" />
-                    다운로드
-                  </Button>
-                  <Button onClick={() => setShowReportPanel(false)} variant="ghost" size="icon">
-                    <X className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Panel Content */}
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="prose prose-slate dark:prose-invert max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {reportContent}
-                  </ReactMarkdown>
-                </div>
-              </div>
-            </motion.div>
-          </>
+          <SlidePanel
+            isOpen={showReportPanel}
+            onClose={() => setShowReportPanel(false)}
+            title="생성된 보고서"
+            titleIcon={<FileText className="h-5 w-5" />}
+            headerActions={
+              <Button onClick={handleDownloadReport} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                다운로드
+              </Button>
+            }
+          >
+            <div className="prose prose-slate dark:prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {reportContent}
+              </ReactMarkdown>
+            </div>
+          </SlidePanel>
         )}
       </AnimatePresence>
     </div>
