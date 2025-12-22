@@ -1,11 +1,32 @@
 // app/api/chat/route.ts
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { SYSTEM_PROMPT } from "@/lib/prompts";
 
 const apiKey = process.env.GOOGLE_API_KEY;
-
 const genAI = new GoogleGenerativeAI(apiKey || "");
+
+// JSON 응답 스키마 정의
+const responseSchema = {
+  type: SchemaType.OBJECT as const,
+  properties: {
+    reply: {
+      type: SchemaType.STRING as const,
+      description: "사용자에게 보여줄 대화 답변",
+    },
+    report: {
+      type: SchemaType.OBJECT as const,
+      description: "실시간 기획안에 반영할 데이터",
+      properties: {
+        reason: { type: SchemaType.STRING as const, description: "기획 배경" },
+        goal: { type: SchemaType.STRING as const, description: "목표" },
+        detailedPlan: { type: SchemaType.STRING as const, description: "상세 계획" },
+        resources: { type: SchemaType.STRING as const, description: "필요 자원" },
+      },
+    },
+  },
+  required: ["reply"],
+};
 
 export async function POST(req: Request) {
   try {
@@ -24,11 +45,13 @@ export async function POST(req: Request) {
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash",
       systemInstruction: SYSTEM_PROMPT,
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+      },
     });
 
     // 대화 내역(history) 설정
-    // 구글 API 규칙: 첫 번째 메시지는 반드시 'user'여야 함
-    // AI의 첫 인사를 제외하기 위해 첫 번째 메시지가 'model'이면 필터링하거나 무시합니다.
     let history = messages.slice(0, -1).map((msg: any) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
@@ -41,21 +64,35 @@ export async function POST(req: Request) {
     
     const lastMessage = messages[messages.length - 1].content;
 
-    console.log(`DEBUG: Sending message to Gemini. Validated History: ${history.length} items`);
+    console.log(`DEBUG: Sending message to Gemini. History: ${history.length} items`);
 
     const chat = model.startChat({ history });
     const result = await chat.sendMessage(lastMessage);
     const response = await result.response;
     const text = response.text();
 
-    return NextResponse.json({ reply: text });
+    console.log("DEBUG: Raw Gemini response:", text);
+
+    // JSON 파싱
+    try {
+      const parsedResponse = JSON.parse(text);
+      
+      // reply와 report를 분리하여 반환
+      return NextResponse.json({
+        reply: parsedResponse.reply || "응답을 생성하지 못했습니다.",
+        report: parsedResponse.report || null,
+      });
+    } catch (parseError) {
+      // JSON 파싱 실패 시 원본 텍스트를 reply로 반환
+      console.warn("JSON parse failed, returning raw text:", parseError);
+      return NextResponse.json({ reply: text, report: null });
+    }
+
   } catch (error: any) {
-    // 구글 API에서 보낸 상세 에러 로그 출력
     console.error("Detailed Gemini API Error:", error);
     
-    // 모델명 오류인 경우 사용자가 알 수 있게 메시지 구성
     const errorMessage = error.message?.includes("not found") 
-      ? "모델명을 찾을 수 없습니다 (gemini-2.5-flash 확인 필요)" 
+      ? "모델명을 찾을 수 없습니다" 
       : "AI 응답 생성 중 오류가 발생했습니다.";
 
     return NextResponse.json({ 
