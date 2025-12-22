@@ -79,7 +79,7 @@ export default function CompletionPage() {
     <div className="flex flex-col min-h-screen bg-background">
       {/* Top Navigation Bar */}
       <header className="flex items-center justify-center px-6 py-4 border-b border-border bg-background/95 backdrop-blur-sm">
-        <StepNavigation currentStep={3} />
+        <StepNavigation currentStep={4} />
       </header>
 
       {/* Main Content */}

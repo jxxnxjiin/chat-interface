@@ -21,7 +21,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "잘못된 요청 형식입니다." }, { status: 400 });
     }
 
-    // 2025년 12월 기준, 모델명이 정확한지 확인이 필요합니다.
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash",
       systemInstruction: SYSTEM_PROMPT,
