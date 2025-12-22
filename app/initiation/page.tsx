@@ -21,7 +21,10 @@ export default function InitiationPage() {
     {
       id: "1",
       role: "assistant",
-      content: "안녕하세요! 이번 프로젝트의 목표는 무엇인가요? 편하게 말씀해 주시면 제가 계획 수립을 도와드릴게요.",
+      content: `안녕하세요! 👋 
+이번 프로젝트의 목표는 무엇인가요? 
+
+편하게 말씀해 주시면 제가 구체적인 계획 수립을 도와드릴게요. 😊`,
     },
   ])
   const [inputValue, setInputValue] = useState("")
@@ -122,7 +125,7 @@ export default function InitiationPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <h1 className="font-semibold text-foreground">기획 에이전트</h1>
+                <h1 className="font-semibold text-foreground">업무 이니시에이터</h1>
                 <p className="text-xs text-muted-foreground">Powered by Gemini</p>
               </div>
             </div>
@@ -272,9 +275,9 @@ export default function InitiationPage() {
               <div className="flex items-start gap-3">
                 <span className="text-lg">🤖</span>
                 <div>
-                  <p className="font-medium text-sm text-blue-900 dark:text-blue-100">AI 자원 점검</p>
+                  <p className="font-medium text-sm text-blue-900 dark:text-blue-100">자동 요약</p>
                   <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                    계획이 구체화되면 필요한 자원을 점검해드립니다.
+                    대화 내용을 바탕으로 자동 요약됩니다. 보고서 작성을 원하시면 AI에게 직접 요청하거나, [확정 및 저장] 버튼을 눌러주세요.
                   </p>
                 </div>
               </div>
