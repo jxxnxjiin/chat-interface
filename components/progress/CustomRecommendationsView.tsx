@@ -106,7 +106,7 @@ export function CustomRecommendationsView() {
             </p>
           </div>
         ) : (
-          /* 변경된 부분: md 이상일 때 2열 그리드 적용 */
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tools.map((tool, index) => (
               <motion.div
@@ -114,7 +114,6 @@ export function CustomRecommendationsView() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                /* 변경된 부분: h-full과 flex-col을 추가하여 카드 높이를 맞춤 */
                 className="bg-muted/50 rounded-xl p-6 border border-border hover:border-primary/50 transition-colors relative h-full flex flex-col justify-between"
               >
                 <div className="space-y-2 mb-4">

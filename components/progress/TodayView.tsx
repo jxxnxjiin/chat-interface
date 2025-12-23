@@ -200,23 +200,6 @@ export function TodayView({ tasks, onToggle, onAddTask }: TodayViewProps) {
           ))}
         </div>
       </div>
-
-      {/* Progress Summary */}
-      {/* <div className="bg-muted/50 rounded-xl p-6 border border-border">
-        <h3 className="text-lg font-semibold mb-4">오늘의 진행률</h3>
-        <div className="flex items-center gap-4">
-          <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              className="h-full bg-primary rounded-full"
-            />
-          </div>
-          <span className="text-sm font-medium">
-            {completedCount} / {tasks.length}
-          </span>
-        </div>
-      </div> */}
     </div>
   )
 }

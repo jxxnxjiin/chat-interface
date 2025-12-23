@@ -2,100 +2,20 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { 
-  Plus, 
-  FolderOpen, 
-  Clock, 
-  CheckCircle2, 
-  PlayCircle, 
-  Trash2, 
+import {
+  Plus,
+  FolderOpen,
+  CheckCircle2,
+  Trash2,
   Archive,
   ChevronDown,
   ChevronRight,
-  FileCheck
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-
-interface Project {
-  id: string
-  name: string
-  status: "initiation" | "progress" | "completion" | "archived"
-  result?: "success" | "failure" // archived 프로젝트의 결과
-  createdAt: string
-  updatedAt: string
-}
-
-const statusConfig = {
-  initiation: {
-    label: "Initiation",
-    color: "bg-blue-500",
-    textColor: "text-blue-500",
-    icon: PlayCircle,
-    href: "/initiation",
-  },
-  progress: {
-    label: "In Progress",
-    color: "bg-yellow-500",
-    textColor: "text-yellow-500",
-    icon: Clock,
-    href: "/progress",
-  },
-  completion: {
-    label: "Completion",
-    color: "bg-purple-500",
-    textColor: "text-purple-500",
-    icon: FileCheck,
-    href: "/completion",
-  },
-  archived: {
-    label: "완료됨",
-    color: "bg-gray-500",
-    textColor: "text-gray-500",
-    icon: Archive,
-    href: "#", // archived는 클릭해도 이동 안 함
-  },
-}
-
-const initialProjects: Project[] = [
-  {
-    id: "1",
-    name: "신규 서비스 기획",
-    status: "progress",
-    createdAt: "2025-12-20",
-    updatedAt: "2025-12-22",
-  },
-  {
-    id: "2",
-    name: "마케팅 캠페인 A",
-    status: "initiation",
-    createdAt: "2025-12-21",
-    updatedAt: "2025-12-21",
-  },
-  {
-    id: "3",
-    name: "Q4 성과 보고서",
-    status: "completion",
-    createdAt: "2025-12-15",
-    updatedAt: "2025-12-19",
-  },
-  {
-    id: "4",
-    name: "2024 연간 보고서",
-    status: "archived",
-    result: "success",
-    createdAt: "2024-11-01",
-    updatedAt: "2024-12-10",
-  },
-  {
-    id: "5",
-    name: "신규 기능 POC",
-    status: "archived",
-    result: "failure",
-    createdAt: "2024-10-15",
-    updatedAt: "2024-11-20",
-  },
-]
+import { Project } from "@/lib/types"
+import { statusConfig } from "@/lib/project-constants"
+import { initialProjects } from "@/lib/initial-data"
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>(initialProjects)

@@ -29,7 +29,7 @@ export interface ToolCategory {
   }[]
 }
 
-export type MenuItem = "timeline" | "today" | "ai-tools" | "tool-search"
+export type MenuItem = "timeline" | "custom-recommendations" | "tool-search"
 
 // 간트 차트 아이템
 export interface GanttItem {
@@ -46,4 +46,14 @@ export interface RecommendedTool {
   tool_name: string
   description: string
   url: string
+}
+
+// 프로젝트
+export interface Project {
+  id: string
+  name: string
+  status: "initiation" | "progress" | "completion" | "archived"
+  result?: "success" | "failure" // archived 프로젝트의 결과
+  createdAt: string
+  updatedAt: string
 }

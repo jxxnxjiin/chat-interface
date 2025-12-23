@@ -5,56 +5,8 @@ import { Task, MenuItem, GanttItem } from "@/lib/types"
 import { ProjectHeader } from "@/components/shared"
 import { TimelineView, TodayView, CustomRecommendationsView, ToolSearchView } from "@/components/progress"
 import { getProjectStorageItem, setProjectStorageItem } from "@/lib/storage-utils"
-
-// 탭 메뉴 아이템
-const menuItems = [
-  { id: "timeline" as MenuItem, label: "프로젝트 타임라인"},
-  { id: "custom-recommendations" as MenuItem, label: "맞춤 추천"},
-  { id: "tool-search" as MenuItem, label: "도구 검색"},
-]
-
-// 초기 할 일 데이터
-const initialTasks: Task[] = [
-  {
-    id: "1",
-    title: "미팅 내용 정리",
-    completed: false,
-    recommendedTool: { name: "Clova Note", icon: "🎙️", url: "#" }
-  },
-  {
-    id: "2",
-    title: "프로젝트 기획서 작성",
-    completed: false,
-    recommendedTool: { name: "Claude", icon: "💬", url: "#" }
-  },
-  {
-    id: "3",
-    title: "디자인 시안 작성",
-    completed: true,
-    recommendedTool: { name: "Midjourney", icon: "🎨", url: "#" }
-  },
-]
-
-// 초기 간트 아이템 데이터
-const today = new Date()
-const formatDate = (date: Date) => date.toISOString().split("T")[0]
-
-const initialGanttItems: GanttItem[] = [
-  {
-    id: "1",
-    title: "기획",
-    startDate: formatDate(today),
-    endDate: formatDate(new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)),
-    color: "bg-blue-500"
-  },
-  {
-    id: "2",
-    title: "디자인",
-    startDate: formatDate(new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)),
-    endDate: formatDate(new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000)),
-    color: "bg-purple-500"
-  },
-]
+import { menuItems } from "@/lib/progress-constants"
+import { initialTasks, initialGanttItems } from "@/lib/initial-data"
 
 export default function ProgressPage() {
   const [activeMenu, setActiveMenu] = useState<MenuItem>("timeline")
