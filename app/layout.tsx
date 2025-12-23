@@ -13,15 +13,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Chat & Report',
-  description: '채팅 기반 보고서 생성 서비스',
+  description: 'SmartWork',
   icons: {
     icon: [
       {
-        url: '/image.png',
+        url: '/jinhak.png',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/image.png',
+        url: '/jinhak.png',
         media: '(prefers-color-scheme: dark)',
       },
       {
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
         type: 'image/svg+xml',
       },
     ],
-    apple: '/image.png',
+    apple: '/jinhak.png',
   },
 }
 
