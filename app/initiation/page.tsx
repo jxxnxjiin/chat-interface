@@ -4,8 +4,9 @@ import { useState, useEffect } from "react"
 import { AnimatePresence } from "framer-motion"
 import { Save, FileText, Download, Loader2, Layout, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ProjectHeader, SlidePanel, ChatMessageList, ChatInput } from "@/components/shared"
+import { ProjectHeader, SlidePanel, ChatMessageList, ChatInput, PlanField } from "@/components/shared"
 import { Message } from "@/lib/types"
+import { getCurrentProjectId, getProjectStorageItem, setProjectStorageItem } from "@/lib/storage-utils"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkBreaks from "remark-breaks"
@@ -18,32 +19,9 @@ interface PlanData {
   resources: string
 }
 
-// 현재 프로젝트 ID 가져오기
-const getCurrentProjectId = () => {
-  if (typeof window === "undefined") return "default"
-  try {
-    const currentProject = localStorage.getItem("chat-current-project")
-    if (currentProject) {
-      const project = JSON.parse(currentProject)
-      return project.id || "default"
-    }
-  } catch (e) {
-    console.error("Failed to get current project:", e)
-  }
-  return "default"
-}
-
 export default function InitiationPage() {
-  const projectId = getCurrentProjectId()
-
-  const [messages, setMessages] = useState<Message[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`chat-${projectId}-initiation-messages`)
-      if (saved) {
-        return JSON.parse(saved)
-      }
-    }
-    return [
+  const [messages, setMessages] = useState<Message[]>(() =>
+    getProjectStorageItem("initiation-messages", [
       {
         id: "1",
         role: "assistant",
@@ -52,26 +30,20 @@ export default function InitiationPage() {
 
 편하게 말씀해 주시면 제가 구체적인 계획 수립을 도와드릴게요. 😊`,
       },
-    ]
-  })
+    ])
+  )
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
 
   // 실시간 기획안 데이터
-  const [planData, setPlanData] = useState<PlanData>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`chat-${projectId}-initiation-planData`)
-      if (saved) {
-        return JSON.parse(saved)
-      }
-    }
-    return {
+  const [planData, setPlanData] = useState<PlanData>(() =>
+    getProjectStorageItem("initiation-planData", {
       reason: "",
       goal: "",
       detailedPlan: "",
       resources: "",
-    }
-  })
+    })
+  )
 
   // 보고서 관련 state
   const [isGeneratingReport, setIsGeneratingReport] = useState(false)
@@ -80,17 +52,13 @@ export default function InitiationPage() {
 
   // localStorage에 messages 저장
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`chat-${projectId}-initiation-messages`, JSON.stringify(messages))
-    }
-  }, [messages, projectId])
+    setProjectStorageItem("initiation-messages", messages)
+  }, [messages])
 
   // localStorage에 planData 저장
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`chat-${projectId}-initiation-planData`, JSON.stringify(planData))
-    }
-  }, [planData, projectId])
+    setProjectStorageItem("initiation-planData", planData)
+  }, [planData])
 
   const handleSend = async () => {
     if (!inputValue.trim() || isTyping) return
@@ -205,18 +173,6 @@ export default function InitiationPage() {
         <div className="w-full max-w-7xl flex overflow-hidden">
           {/* Main: Chat Area */}
           <main className="flex-1 flex flex-col overflow-y-auto custom-scrollbar pl-6">
-            {/* Chat Header */}
-            {/* <div className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-md pr-6 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 text-primary">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold tracking-tight">업무 이니시에이터</h1>
-                  <p className="text-xs text-muted-foreground font-medium">Gemini 2.5 Flash</p>
-                </div>
-              </div>
-            </div> */}
 
             {/* Chat Messages */}
             <ChatMessageList messages={messages} isTyping={isTyping} variant="default" />
@@ -281,68 +237,35 @@ export default function InitiationPage() {
             </div>
 
             {/* 기획 배경 */}
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-2 px-1">
-                <div className="w-1 h-3.5 bg-primary/40 rounded-full" />
-                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-wider">
-                  기획 배경
-                </label>
-              </div>
-              <textarea
-                value={planData.reason}
-                onChange={(e) => setPlanData(prev => ({ ...prev, reason: e.target.value }))}
-                placeholder="대화 내용을 바탕으로 자동 입력됩니다..."
-                className="w-full min-h-[90px] px-4 py-3 text-sm bg-card border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed transition-all"
-              />
-            </div>
+            <PlanField
+              label="기획 배경"
+              value={planData.reason}
+              onChange={(value) => setPlanData(prev => ({ ...prev, reason: value }))}
+              placeholder="대화 내용을 바탕으로 자동 입력됩니다..."
+              minHeight="90px"
+            />
 
             {/* 목표 */}
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-2 px-1">
-                <div className="w-1 h-3.5 bg-primary/40 rounded-full" />
-                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-wider">
-                  목표
-                </label>
-              </div>
-              <textarea
-                value={planData.goal}
-                onChange={(e) => setPlanData(prev => ({ ...prev, goal: e.target.value }))}
-                placeholder="..."
-                className="w-full min-h-[70px] px-4 py-3 text-sm bg-card border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed transition-all"
-              />
-            </div>
+            <PlanField
+              label="목표"
+              value={planData.goal}
+              onChange={(value) => setPlanData(prev => ({ ...prev, goal: value }))}
+            />
 
             {/* 상세 계획 */}
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-2 px-1">
-                <div className="w-1 h-3.5 bg-primary/40 rounded-full" />
-                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-wider">
-                  상세 계획
-                </label>
-              </div>
-              <textarea
-                value={planData.detailedPlan}
-                onChange={(e) => setPlanData(prev => ({ ...prev, detailedPlan: e.target.value }))}
-                placeholder="..."
-                className="w-full min-h-[120px] px-4 py-3 text-sm bg-card border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed transition-all"
-              />
-            </div>
+            <PlanField
+              label="상세 계획"
+              value={planData.detailedPlan}
+              onChange={(value) => setPlanData(prev => ({ ...prev, detailedPlan: value }))}
+              minHeight="120px"
+            />
 
             {/* 필요 자원 */}
-            <div className="space-y-2.5">
-              <div className="flex items-center gap-2 px-1">
-                <div className="w-1 h-3.5 bg-primary/40 rounded-full" />
-                <label className="text-[11px] font-black text-muted-foreground uppercase tracking-wider">
-                  필요 자원
-                </label>
-              </div>
-              <textarea
-                value={planData.resources}
-                onChange={(e) => setPlanData(prev => ({ ...prev, resources: e.target.value }))}
-                placeholder="..."
-                className="w-full min-h-[70px] px-4 py-3 text-sm bg-card border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none leading-relaxed transition-all"
-              />
-            </div>
+            <PlanField
+              label="필요 자원"
+              value={planData.resources}
+              onChange={(value) => setPlanData(prev => ({ ...prev, resources: value }))}
+            />
 
             
           </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Task, MenuItem, GanttItem } from "@/lib/types"
 import { ProjectHeader } from "@/components/shared"
 import { TimelineView, TodayView, CustomRecommendationsView, ToolSearchView } from "@/components/progress"
+import { getProjectStorageItem, setProjectStorageItem } from "@/lib/storage-utils"
 
 // 탭 메뉴 아이템
 const menuItems = [
@@ -55,60 +56,28 @@ const initialGanttItems: GanttItem[] = [
   },
 ]
 
-// 현재 프로젝트 ID 가져오기
-const getCurrentProjectId = () => {
-  if (typeof window === "undefined") return "default"
-  try {
-    const currentProject = localStorage.getItem("chat-current-project")
-    if (currentProject) {
-      const project = JSON.parse(currentProject)
-      return project.id || "default"
-    }
-  } catch (e) {
-    console.error("Failed to get current project:", e)
-  }
-  return "default"
-}
-
 export default function ProgressPage() {
-  const projectId = getCurrentProjectId()
   const [activeMenu, setActiveMenu] = useState<MenuItem>("timeline")
 
   // Tasks state (localStorage 연동)
-  const [tasks, setTasks] = useState<Task[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`chat-${projectId}-progress-tasks`)
-      if (saved) {
-        return JSON.parse(saved)
-      }
-    }
-    return initialTasks
-  })
+  const [tasks, setTasks] = useState<Task[]>(() =>
+    getProjectStorageItem("progress-tasks", initialTasks)
+  )
 
   // Gantt Items state (localStorage 연동)
-  const [ganttItems, setGanttItems] = useState<GanttItem[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`chat-${projectId}-progress-gantt`)
-      if (saved) {
-        return JSON.parse(saved)
-      }
-    }
-    return initialGanttItems
-  })
+  const [ganttItems, setGanttItems] = useState<GanttItem[]>(() =>
+    getProjectStorageItem("progress-gantt", initialGanttItems)
+  )
 
   // localStorage에 tasks 저장
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`chat-${projectId}-progress-tasks`, JSON.stringify(tasks))
-    }
-  }, [tasks, projectId])
+    setProjectStorageItem("progress-tasks", tasks)
+  }, [tasks])
 
   // localStorage에 ganttItems 저장
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`chat-${projectId}-progress-gantt`, JSON.stringify(ganttItems))
-    }
-  }, [ganttItems, projectId])
+    setProjectStorageItem("progress-gantt", ganttItems)
+  }, [ganttItems])
 
   const toggleTask = (taskId: string) => {
     setTasks(prev => prev.map(task =>

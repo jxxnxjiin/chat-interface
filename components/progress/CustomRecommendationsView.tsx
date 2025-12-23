@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { ExternalLink, Sparkles, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { getProjectStorageItem, setProjectStorageItem } from "@/lib/storage-utils"
 
 interface CustomTool {
   tool_name: string
@@ -12,52 +13,23 @@ interface CustomTool {
   category: string
 }
 
-// 현재 프로젝트 ID 가져오기
-const getCurrentProjectId = () => {
-  if (typeof window === "undefined") return "default"
-  try {
-    const currentProject = localStorage.getItem("chat-current-project")
-    if (currentProject) {
-      const project = JSON.parse(currentProject)
-      return project.id || "default"
-    }
-  } catch (e) {
-    console.error("Failed to get current project:", e)
-  }
-  return "default"
-}
-
 export function CustomRecommendationsView() {
-  const projectId = getCurrentProjectId()
-
-  const [tools, setTools] = useState<CustomTool[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`chat-${projectId}-custom-tools`)
-      if (saved) {
-        return JSON.parse(saved)
-      }
-    }
-    return []
-  })
+  const [tools, setTools] = useState<CustomTool[]>(() =>
+    getProjectStorageItem("custom-tools", [])
+  )
   const [isLoading, setIsLoading] = useState(false)
 
   // localStorage에 tools 저장
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`chat-${projectId}-custom-tools`, JSON.stringify(tools))
-    }
-  }, [tools, projectId])
+    setProjectStorageItem("custom-tools", tools)
+  }, [tools])
 
   const handleGetRecommendations = async () => {
     setIsLoading(true)
 
     try {
       // localStorage에서 프로젝트 데이터 가져오기
-      const planDataStr = localStorage.getItem(`chat-${projectId}-initiation-planData`)
-      const ganttItemsStr = localStorage.getItem(`chat-${projectId}-progress-gantt`)
-      const tasksStr = localStorage.getItem(`chat-${projectId}-progress-tasks`)
-
-      const planData = planDataStr ? JSON.parse(planDataStr) : null
+      const planData = getProjectStorageItem("initiation-planData", null)
 
       // 기획안 데이터가 없으면 경고
       if (!planData) {
@@ -65,8 +37,8 @@ export function CustomRecommendationsView() {
         return
       }
 
-      const ganttItems = ganttItemsStr ? JSON.parse(ganttItemsStr) : []
-      const tasks = tasksStr ? JSON.parse(tasksStr) : []
+      const ganttItems = getProjectStorageItem("progress-gantt", [])
+      const tasks = getProjectStorageItem("progress-tasks", [])
 
       const response = await fetch("/api/custom-tool-recommendations", {
         method: "POST",

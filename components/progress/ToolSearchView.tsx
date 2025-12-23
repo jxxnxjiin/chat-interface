@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ExternalLink } from "lucide-react"
 import { ChatMessageList, ChatInput } from "@/components/shared"
 import { Message } from "@/lib/types"
+import { getProjectStorageItem, setProjectStorageItem } from "@/lib/storage-utils"
 
 interface RecommendedTool {
   id: string
@@ -13,64 +14,31 @@ interface RecommendedTool {
   url?: string
 }
 
-// 현재 프로젝트 ID 가져오기
-const getCurrentProjectId = () => {
-  if (typeof window === "undefined") return "default"
-  try {
-    const currentProject = localStorage.getItem("chat-current-project")
-    if (currentProject) {
-      const project = JSON.parse(currentProject)
-      return project.id || "default"
-    }
-  } catch (e) {
-    console.error("Failed to get current project:", e)
-  }
-  return "default"
-}
-
 export function ToolSearchView() {
-  const projectId = getCurrentProjectId()
-
-  const [messages, setMessages] = useState<Message[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`chat-${projectId}-tool-search-messages`)
-      if (saved) {
-        return JSON.parse(saved)
-      }
-    }
-    return [
+  const [messages, setMessages] = useState<Message[]>(() =>
+    getProjectStorageItem("tool-search-messages", [
       {
         id: "1",
         role: "assistant",
         content: "안녕하세요!\n\n어떤 작업을 하시나요? 맞춤형 도구를 추천해드릴게요. 🔍",
       },
-    ]
-  })
+    ])
+  )
   const [inputValue, setInputValue] = useState("")
   const [isTyping, setIsTyping] = useState(false)
-  const [recommendedTools, setRecommendedTools] = useState<RecommendedTool[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`chat-${projectId}-tool-search-tools`)
-      if (saved) {
-        return JSON.parse(saved)
-      }
-    }
-    return []
-  })
+  const [recommendedTools, setRecommendedTools] = useState<RecommendedTool[]>(() =>
+    getProjectStorageItem("tool-search-tools", [])
+  )
 
   // localStorage에 messages 저장
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`chat-${projectId}-tool-search-messages`, JSON.stringify(messages))
-    }
-  }, [messages, projectId])
+    setProjectStorageItem("tool-search-messages", messages)
+  }, [messages])
 
   // localStorage에 recommendedTools 저장
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`chat-${projectId}-tool-search-tools`, JSON.stringify(recommendedTools))
-    }
-  }, [recommendedTools, projectId])
+    setProjectStorageItem("tool-search-tools", recommendedTools)
+  }, [recommendedTools])
 
   const handleSend = async () => {
     if (!inputValue.trim() || isTyping) return
