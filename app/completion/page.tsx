@@ -4,7 +4,7 @@ import { useState } from "react"
 import { AnimatePresence } from "framer-motion"
 import { ChevronRight, ChevronLeft, FileText, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { StepNavigation, SlidePanel } from "@/components/shared"
+import { ProjectHeader, SlidePanel } from "@/components/shared"
 import { 
   EvaluationStep, 
   SubmissionStep, 
@@ -80,10 +80,8 @@ export default function CompletionPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      {/* Top Navigation Bar */}
-      <header className="flex items-center justify-center px-6 py-4 border-b border-border bg-background/95 backdrop-blur-sm">
-        <StepNavigation currentStep={4} />
-      </header>
+      {/* Project Header */}
+      <ProjectHeader currentStep={3} />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col items-center justify-center p-8">

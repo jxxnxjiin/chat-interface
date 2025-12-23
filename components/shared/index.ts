@@ -3,4 +3,5 @@ export { StepNavigation } from "./StepNavigation"
 export { SlidePanel } from "./SlidePanel"
 export { TypingIndicator } from "./TypingIndicator"
 export { EditableTitle } from "./EditableTitle"
+export { ProjectHeader } from "./ProjectHeader"
 

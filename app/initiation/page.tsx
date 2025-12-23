@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Send, Sparkles, Save, FileText, Download, Loader2, ChevronRight, Layout } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { StepNavigation, TypingIndicator, SlidePanel } from "@/components/shared"
+import { ProjectHeader, TypingIndicator, SlidePanel } from "@/components/shared"
 import { Message } from "@/lib/types"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -211,10 +211,8 @@ export default function InitiationPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
-      {/* Top Navigation Bar */}
-      <header className="flex-shrink-0 flex items-center justify-center px-6 py-4 border-b border-border bg-background/95 backdrop-blur-sm z-20">
-        <StepNavigation currentStep={2} />
-      </header>
+      {/* Project Header */}
+      <ProjectHeader currentStep={1} />
 
       <div className="flex flex-1 overflow-hidden relative">
         {/* Main: Chat Area (Centered) */}

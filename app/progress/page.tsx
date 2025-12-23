@@ -8,13 +8,12 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { Task, MenuItem } from "@/lib/types"
-import { StepNavigation } from "@/components/shared"
+import { ProjectHeader } from "@/components/shared"
 import { TimelineView, TodayView, AIToolsView, CustomRecommendationsView } from "@/components/progress"
 
 // 사이드바 메뉴 아이템
 const menuItems = [
   { id: "timeline" as MenuItem, label: "프로젝트 타임라인", icon: Calendar },
-  { id: "today" as MenuItem, label: "오늘 할 일", icon: CheckSquare },
   { id: "ai-tools" as MenuItem, label: "추천 도구 목록", icon: Sparkles },
   { id: "custom-recommendations" as MenuItem, label: "맞춤 추천", icon: Sparkles },
 ]
@@ -58,22 +57,7 @@ const getCurrentProjectId = () => {
 
 export default function ProgressPage() {
   const projectId = getCurrentProjectId()
-  const [activeMenu, setActiveMenu] = useState<MenuItem>("today")
-  const [projectName, setProjectName] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      // 현재 프로젝트 정보에서 이름 가져오기
-      const currentProject = localStorage.getItem("chat-current-project")
-      if (currentProject) {
-        try {
-          const project = JSON.parse(currentProject)
-          return project.name || "프로젝트명"
-        } catch (e) {
-          console.error("Failed to parse current project:", e)
-        }
-      }
-    }
-    return "프로젝트명"
-  })
+  const [activeMenu, setActiveMenu] = useState<MenuItem>("timeline")
   const [tasks, setTasks] = useState<Task[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(`chat-${projectId}-progress-tasks`)
@@ -109,22 +93,14 @@ export default function ProgressPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Top Navigation Bar */}
-      <header className="flex items-center justify-center px-6 py-4 border-b border-border bg-background/95 backdrop-blur-sm">
-        <StepNavigation currentStep={3} />
-      </header>
+      {/* Project Header */}
+      <ProjectHeader currentStep={2} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-64 border-r border-border bg-muted/30 flex flex-col">
-          {/* Project Info */}
-          <div className="px-4 py-6">
-            <h2 className="font-semibold text-foreground">{projectName}</h2>
-            <p className="text-xs text-muted-foreground mt-1">In Progress</p>
-          </div>
-
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-4 pt-6 space-y-2">
             {menuItems.map((item) => {
               const Icon = item.icon
               const isActive = activeMenu === item.id
@@ -156,22 +132,38 @@ export default function ProgressPage() {
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <header className="px-8 py-6 border-b border-border bg-background/95 backdrop-blur-sm">
-            <h2 className="text-2xl font-bold text-foreground">
-              {menuItems.find(m => m.id === activeMenu)?.label}
-            </h2>
-          </header>
+          {activeMenu === "timeline" ? (
+            /* 타임라인 페이지: 간트차트 + TO-DO */
+            <div className="flex-1 overflow-auto p-8 pr-64">
+              <div className="grid grid-cols-3 gap-6 h-full">
+                {/* 왼쪽: 간트차트 (2/3) */}
+                <div className="col-span-2 overflow-y-auto">
+                  <TimelineView />
+                </div>
 
-          {/* Content Area */}
-          <div className="flex-1 overflow-auto p-8">
-            {activeMenu === "timeline" && <TimelineView />}
-            {activeMenu === "today" && (
-              <TodayView tasks={tasks} onToggle={toggleTask} onAddTask={addTask} />
-            )}
-            {activeMenu === "ai-tools" && <AIToolsView />}
-            {activeMenu === "custom-recommendations" && <CustomRecommendationsView />}
-          </div>
+                {/* 오른쪽: TO-DO (1/3) */}
+                <div className="col-span-1 overflow-y-auto">
+                  <TodayView tasks={tasks} onToggle={toggleTask} onAddTask={addTask} />
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* 다른 페이지들: 기존 레이아웃 */
+            <>
+              {/* Header */}
+              <header className="px-8 py-6 border-b border-border bg-background/95 backdrop-blur-sm">
+                <h2 className="text-2xl font-bold text-foreground">
+                  {menuItems.find(m => m.id === activeMenu)?.label}
+                </h2>
+              </header>
+
+              {/* Content Area */}
+              <div className="flex-1 overflow-auto p-8">
+                {activeMenu === "ai-tools" && <AIToolsView />}
+                {activeMenu === "custom-recommendations" && <CustomRecommendationsView />}
+              </div>
+            </>
+          )}
         </main>
       </div>
     </div>
