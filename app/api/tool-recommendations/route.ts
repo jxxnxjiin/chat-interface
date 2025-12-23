@@ -69,7 +69,7 @@ export async function POST(req: Request) {
 
     const chat = model.startChat({ history });
     const result = await chat.sendMessage(lastMessage);
-    const response = await result.response;
+    const response = result.response;
     const text = response.text();
 
     // JSON 파싱

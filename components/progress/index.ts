@@ -4,4 +4,5 @@ export { TodayView } from "./TodayView"
 export { AIToolsView } from "./AIToolsView"
 export { TaskItem } from "./TaskItem"
 export { CustomRecommendationsView } from "./CustomRecommendationsView"
+export { ToolSearchView } from "./ToolSearchView"
 

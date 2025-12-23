@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Send, ExternalLink } from "lucide-react"
+import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import { ExternalLink, Sparkles, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { TypingIndicator } from "@/components/shared"
-import { Message, RecommendedTool } from "@/lib/types"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
-import remarkBreaks from "remark-breaks"
+
+interface CustomTool {
+  tool_name: string
+  description: string
+  url?: string
+  category: string
+}
 
 // 현재 프로젝트 ID 가져오기
 const getCurrentProjectId = () => {
@@ -28,239 +30,136 @@ const getCurrentProjectId = () => {
 export function CustomRecommendationsView() {
   const projectId = getCurrentProjectId()
 
-  const [messages, setMessages] = useState<Message[]>(() => {
+  const [tools, setTools] = useState<CustomTool[]>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`chat-${projectId}-recommendations-messages`)
-      if (saved) {
-        return JSON.parse(saved)
-      }
-    }
-    return [
-      {
-        id: "1",
-        role: "assistant",
-        content: "안녕하세요!\n\n어떤 작업을 하시나요? 맞춤형 도구를 추천해드릴게요. 🔍",
-      },
-    ]
-  })
-  const [inputValue, setInputValue] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
-  const [recommendedTools, setRecommendedTools] = useState<RecommendedTool[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`chat-${projectId}-recommendations-tools`)
+      const saved = localStorage.getItem(`chat-${projectId}-custom-tools`)
       if (saved) {
         return JSON.parse(saved)
       }
     }
     return []
   })
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  // localStorage에 messages 저장
+  // localStorage에 tools 저장
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(`chat-${projectId}-recommendations-messages`, JSON.stringify(messages))
+      localStorage.setItem(`chat-${projectId}-custom-tools`, JSON.stringify(tools))
     }
-  }, [messages, projectId])
+  }, [tools, projectId])
 
-  // localStorage에 recommendedTools 저장
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`chat-${projectId}-recommendations-tools`, JSON.stringify(recommendedTools))
-    }
-  }, [recommendedTools, projectId])
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "inherit"
-      const scrollHeight = textareaRef.current.scrollHeight
-      textareaRef.current.style.height = `${Math.min(scrollHeight, 200)}px`
-    }
-  }, [inputValue])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
-
-  const handleSend = async () => {
-    if (!inputValue.trim() || isTyping) return
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: inputValue,
-    }
-
-    const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
-    setInputValue("")
-    setIsTyping(true)
+  const handleGetRecommendations = async () => {
+    setIsLoading(true)
 
     try {
-      const response = await fetch("/api/tool-recommendations", {
+      // localStorage에서 프로젝트 데이터 가져오기
+      const planDataStr = localStorage.getItem(`chat-${projectId}-initiation-planData`)
+      const ganttItemsStr = localStorage.getItem(`chat-${projectId}-progress-gantt`)
+      const tasksStr = localStorage.getItem(`chat-${projectId}-progress-tasks`)
+
+      const planData = planDataStr ? JSON.parse(planDataStr) : null
+      const ganttItems = ganttItemsStr ? JSON.parse(ganttItemsStr) : []
+      const tasks = tasksStr ? JSON.parse(tasksStr) : []
+
+      const response = await fetch("/api/custom-tool-recommendations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({ planData, ganttItems, tasks }),
       })
 
       const data = await response.json()
 
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: data.reply || data.error || "응답을 처리하는 중 오류가 발생했습니다.",
-      }
-
-      setMessages((prev) => [...prev, aiResponse])
-
-      // tools 배열이 있으면 추천 도구 리스트에 추가 (중복 제거)
-      if (data.tools && Array.isArray(data.tools) && data.tools.length > 0) {
-        setRecommendedTools((prev) => {
-          const existingNames = new Set(prev.map(t => t.tool_name.toLowerCase()))
-          const newTools: RecommendedTool[] = data.tools
-            .filter((tool: any) => !existingNames.has(tool.tool_name.toLowerCase()))
-            .map((tool: any, index: number) => ({
-              id: (Date.now() + index).toString(),
-              tool_name: tool.tool_name,
-              description: tool.description,
-              url: tool.url || "",
-            }))
-          return [...prev, ...newTools]
-        })
+      if (data.tools && Array.isArray(data.tools)) {
+        setTools(data.tools)
+      } else if (data.error) {
+        alert(`오류: ${data.error}`)
       }
     } catch (error) {
       console.error("Error:", error)
+      alert("도구 추천 중 오류가 발생했습니다.")
     } finally {
-      setIsTyping(false)
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="grid grid-cols-3 gap-6">
-      {/* 왼쪽: 채팅 UI (2/3) */}
-      <div className="col-span-2 flex flex-col bg-card border border-border rounded-2xl overflow-hidden min-h-[600px]">
-        {/* 채팅 메시지 */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <AnimatePresence initial={false}>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex items-start gap-4 ${message.role === "user" ? "flex-row-reverse" : ""}`}
-              >
-                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground border border-border"
-                }`}>
-                  {message.role === "user" ? "ME" : "AI"}
-                </div>
-
-                <div
-                  className={`max-w-[75%] rounded-xl px-5 py-3 shadow-sm ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted/50 text-foreground border border-border"
-                  }`}
-                >
-                  <div className={`text-sm leading-relaxed prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>ul]:ml-0 [&>ol]:ml-0 [&>blockquote]:ml-0 [&>*]:px-0 ${
-                    message.role === "user" ? "prose-invert" : "dark:prose-invert"
-                  }`}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                      {message.content}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-            {isTyping && <TypingIndicator />}
-          </AnimatePresence>
-          <div ref={messagesEndRef} />
+    <div className="flex flex-col h-full space-y-4">
+      {/* 헤더 */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-lg font-semibold">맞춤 추천</h3>
+          <Button
+            onClick={handleGetRecommendations}
+            disabled={isLoading}
+            size="sm"
+            className="gap-2"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                분석 중...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                추천 받기
+              </>
+            )}
+          </Button>
         </div>
-
-        {/* 입력 영역 */}
-        <div className="border-t border-border p-4">
-          <div className="flex items-end gap-3 p-2 bg-background border border-border rounded-2xl">
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              placeholder="어떤 작업을 하시나요?"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyPress}
-              className="flex-1 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none resize-none min-h-[40px] max-h-[200px] leading-relaxed"
-            />
-            <Button
-              size="icon"
-              onClick={handleSend}
-              disabled={!inputValue.trim() || isTyping}
-              className="h-9 w-9 rounded-full bg-primary text-primary-foreground hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100 flex-shrink-0"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          1단계 기획안과 프로젝트 일정을 분석하여 맞춤형 도구를 추천받으세요.
+        </p>
       </div>
 
-      {/* 오른쪽: 추천 도구 카드 리스트 (1/3) */}
-      <div className="col-span-1 flex flex-col bg-card border border-border rounded-2xl overflow-hidden min-h-[600px]">
-        <div className="px-6 py-4 border-b border-border">
-          <h3 className="font-bold text-foreground">추천 도구</h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            AI가 추천한 도구들이 여기에 표시됩니다
-          </p>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {recommendedTools.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              아직 추천된 도구가 없습니다
-            </div>
-          ) : (
-            <AnimatePresence>
-              {recommendedTools.map((tool) => (
-                <motion.div
-                  key={tool.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-xl hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-foreground text-sm mb-1 truncate">{tool.tool_name}</h4>
-                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
-                        {tool.description}
-                      </p>
-                    </div>
-                    {tool.url && (
-                      <a
-                        href={tool.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0 p-1.5 hover:bg-primary/10 rounded-lg transition-colors"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5 text-primary" />
-                      </a>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          )}
-        </div>
+      {/* 도구 목록 */}
+      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
+        {tools.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Sparkles className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p className="text-muted-foreground">
+              아직 추천된 도구가 없습니다.
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              버튼을 클릭하여 프로젝트에 맞는 도구를 추천받으세요!
+            </p>
+          </div>
+        ) : (
+          /* 변경된 부분: md 이상일 때 2열 그리드 적용 */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tools.map((tool, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                /* 변경된 부분: h-full과 flex-col을 추가하여 카드 높이를 맞춤 */
+                className="bg-muted/50 rounded-xl p-6 border border-border hover:border-primary/50 transition-colors relative h-full flex flex-col justify-between"
+              >
+                <div className="space-y-2 mb-4">
+                  <h3 className="text-lg font-semibold pr-8">{tool.tool_name}</h3>
+                  <p className="text-xs text-muted-foreground px-2 py-0.5 bg-background rounded-full inline-block border">
+                    {tool.category}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {tool.description}
+                  </p>
+                </div>
+                
+                {tool.url && (
+                  <a
+                    href={tool.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute top-6 right-6"
+                  >
+                    <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors" />
+                  </a>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -80,7 +80,7 @@ export function TodayView({ tasks, onToggle, onAddTask }: TodayViewProps) {
       {/* Today's Focus */}
       <div className="bg-muted/50 rounded-xl p-6 border border-border">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">오늘의 집중 과업</h3>
+          <h3 className="text-lg font-semibold">✅ 오늘 할 일</h3>
           <Button 
             size="sm" 
             variant="outline" 
@@ -202,7 +202,7 @@ export function TodayView({ tasks, onToggle, onAddTask }: TodayViewProps) {
       </div>
 
       {/* Progress Summary */}
-      <div className="bg-muted/50 rounded-xl p-6 border border-border">
+      {/* <div className="bg-muted/50 rounded-xl p-6 border border-border">
         <h3 className="text-lg font-semibold mb-4">오늘의 진행률</h3>
         <div className="flex items-center gap-4">
           <div className="flex-1 h-3 bg-muted rounded-full overflow-hidden">
@@ -216,7 +216,7 @@ export function TodayView({ tasks, onToggle, onAddTask }: TodayViewProps) {
             {completedCount} / {tasks.length}
           </span>
         </div>
-      </div>
+      </div> */}
     </div>
   )
 }

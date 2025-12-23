@@ -149,10 +149,22 @@ export default function InitiationPage() {
       setMessages((prev) => [...prev, aiResponse])
 
       if (data.report) {
-        setPlanData(prev => ({
-          ...prev,
-          ...data.report
-        }))
+        setPlanData(prev => {
+          const addContent = (existing: string, newContent: string) => {
+            if (!newContent || newContent.trim() === "") return existing
+            if (!existing || existing.trim() === "") return newContent
+            // 중복 체크: 새 내용이 기존 내용에 포함되어 있으면 추가하지 않음
+            if (existing.includes(newContent)) return existing
+            return existing + "\n\n" + newContent
+          }
+
+          return {
+            reason: addContent(prev.reason, data.report.reason || ""),
+            goal: addContent(prev.goal, data.report.goal || ""),
+            detailedPlan: addContent(prev.detailedPlan, data.report.detailedPlan || ""),
+            resources: addContent(prev.resources, data.report.resources || ""),
+          }
+        })
       }
     } catch (error) {
       console.error("Error:", error)
@@ -214,12 +226,12 @@ export default function InitiationPage() {
       {/* Project Header */}
       <ProjectHeader currentStep={1} />
 
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* Main: Chat Area (Centered) */}
-        <main className="flex-1 flex flex-col items-center overflow-y-auto bg-background custom-scrollbar">
-          <div className="w-full max-w-4xl flex flex-col min-h-full">
+      <div className="flex-1 flex justify-center overflow-hidden bg-background">
+        <div className="w-full max-w-7xl flex overflow-hidden">
+          {/* Main: Chat Area */}
+          <main className="flex-1 flex flex-col overflow-y-auto custom-scrollbar pl-6">
             {/* Chat Header */}
-            <div className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-md px-8 py-4">
+            {/* <div className="sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-md pr-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10 text-primary">
                   <Sparkles className="h-5 w-5" />
@@ -229,10 +241,10 @@ export default function InitiationPage() {
                   <p className="text-xs text-muted-foreground font-medium">Gemini 2.5 Flash</p>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Chat Messages */}
-            <div className="flex-1 px-8 py-10 space-y-8">
+            <div className="flex-1 pr-6 py-10 space-y-8">
               <AnimatePresence initial={false}>
                 {messages.map((message) => (
                   <motion.div
@@ -272,7 +284,7 @@ export default function InitiationPage() {
             </div>
 
             {/* Input Area (Centered) */}
-            <div className="sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent px-8 py-8">
+            <div className="sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent pr-6 py-8">
               <div className="max-w-3xl mx-auto relative group">
                 <div className="flex items-end gap-3 p-2 bg-card border border-border rounded-[28px] shadow-2xl focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                   <textarea
@@ -298,39 +310,55 @@ export default function InitiationPage() {
                 </p>
               </div>
             </div>
-          </div>
         </main>
 
-        {/* Sidebar: Real-time Plan Panel (Attached to Right) */}
-        <aside className="w-[380px] flex-shrink-0 flex flex-col bg-muted/30 border-l border-border z-10 shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.1)]">
-          <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-card/50 backdrop-blur-sm">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-primary/10 rounded-lg">
-                <Layout className="h-4 w-4 text-primary" />
+          {/* Sidebar: Real-time Plan Panel */}
+          <aside className="w-[420px] flex-shrink-0 flex flex-col bg-background px-6 py-4 z-10">
+          <div className="flex-1 flex flex-col bg-card border border-border rounded-2xl shadow-lg overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-card/50 backdrop-blur-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Layout className="h-4 w-4 text-primary" />
+                </div>
+                <h2 className="font-bold text-foreground tracking-tight">실시간 기획안</h2>
               </div>
-              <h2 className="font-bold text-foreground tracking-tight">실시간 기획안</h2>
+              <Button
+                onClick={handleSavePlan}
+                size="sm"
+                className="h-8 gap-1.5 px-3 rounded-lg font-bold text-xs"
+                disabled={isGeneratingReport}
+              >
+                {isGeneratingReport ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    생성 중
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3 w-3" />
+                    보고서 생성
+                  </>
+                )}
+              </Button>
             </div>
-            <Button 
-              onClick={handleSavePlan} 
-              size="sm" 
-              className="h-8 gap-1.5 px-3 rounded-lg font-bold text-xs"
-              disabled={isGeneratingReport}
-            >
-              {isGeneratingReport ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  생성 중
-                </>
-              ) : (
-                <>
-                  <Save className="h-3 w-3" />
-                  보고서 생성
-                </>
-              )}
-            </Button>
-          </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+            {/* AI Guide Card */}
+            <div className="p-5 bg-gradient-to-br from-blue-500/10 to-purple-500/5 border border-primary/10 rounded-3xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
+                <Sparkles className="h-12 w-12 text-primary" />
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm">🤖</span>
+                  <p className="font-bold text-xs text-primary tracking-tight">AI 인텔리전스 가이드</p>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
+                  대화 내용이 깊어질수록 기획안이 더 정교하게 업데이트됩니다. <strong>[보고서 생성]</strong>을 눌러 구체적인 리포트를 생성하실 수 있습니다.
+                </p>
+              </div>
+            </div>
+
             {/* 기획 배경 */}
             <div className="space-y-2.5">
               <div className="flex items-center gap-2 px-1">
@@ -395,23 +423,11 @@ export default function InitiationPage() {
               />
             </div>
 
-            {/* AI Guide Card */}
-            <div className="p-5 bg-gradient-to-br from-blue-500/10 to-purple-500/5 border border-primary/10 rounded-3xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
-                <Sparkles className="h-12 w-12 text-primary" />
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm">🤖</span>
-                  <p className="font-bold text-xs text-primary tracking-tight">AI 인텔리전스 가이드</p>
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-                  대화 내용이 깊어질수록 기획안이 더 정교하게 업데이트됩니다. <strong>[보고서 생성]</strong>을 눌러 구체적인 리포트를 생성하실 수 있습니다.
-                </p>
-              </div>
-            </div>
+            
           </div>
-        </aside>
+          </div>
+          </aside>
+        </div>
       </div>
 
       {/* Report Panel (Slide) */}

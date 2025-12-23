@@ -29,7 +29,7 @@ export interface ToolCategory {
   }[]
 }
 
-export type MenuItem = "timeline" | "today" | "ai-tools" | "custom-recommendations"
+export type MenuItem = "timeline" | "today" | "ai-tools" | "tool-search"
 
 // 간트 차트 아이템
 export interface GanttItem {

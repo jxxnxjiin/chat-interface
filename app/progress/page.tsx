@@ -1,19 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  Calendar,
-  Sparkles,
-} from "lucide-react"
-import { Task, MenuItem } from "@/lib/types"
+import { Task, MenuItem, GanttItem } from "@/lib/types"
 import { ProjectHeader } from "@/components/shared"
-import { TimelineView, TodayView, AIToolsView, CustomRecommendationsView } from "@/components/progress"
+import { TimelineView, TodayView, CustomRecommendationsView, ToolSearchView } from "@/components/progress"
 
 // 탭 메뉴 아이템
 const menuItems = [
-  { id: "timeline" as MenuItem, label: "프로젝트 타임라인", icon: Calendar },
-  { id: "ai-tools" as MenuItem, label: "추천 도구 목록", icon: Sparkles },
-  { id: "custom-recommendations" as MenuItem, label: "맞춤 추천", icon: Sparkles },
+  { id: "timeline" as MenuItem, label: "프로젝트 타임라인"},
+  { id: "custom-recommendations" as MenuItem, label: "맞춤 추천"},
+  { id: "tool-search" as MenuItem, label: "도구 검색"},
 ]
 
 // 초기 할 일 데이터
@@ -38,6 +34,27 @@ const initialTasks: Task[] = [
   },
 ]
 
+// 초기 간트 아이템 데이터
+const today = new Date()
+const formatDate = (date: Date) => date.toISOString().split("T")[0]
+
+const initialGanttItems: GanttItem[] = [
+  {
+    id: "1",
+    title: "기획",
+    startDate: formatDate(today),
+    endDate: formatDate(new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)),
+    color: "bg-blue-500"
+  },
+  {
+    id: "2",
+    title: "디자인",
+    startDate: formatDate(new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)),
+    endDate: formatDate(new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000)),
+    color: "bg-purple-500"
+  },
+]
+
 // 현재 프로젝트 ID 가져오기
 const getCurrentProjectId = () => {
   if (typeof window === "undefined") return "default"
@@ -56,6 +73,8 @@ const getCurrentProjectId = () => {
 export default function ProgressPage() {
   const projectId = getCurrentProjectId()
   const [activeMenu, setActiveMenu] = useState<MenuItem>("timeline")
+
+  // Tasks state (localStorage 연동)
   const [tasks, setTasks] = useState<Task[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(`chat-${projectId}-progress-tasks`)
@@ -66,12 +85,30 @@ export default function ProgressPage() {
     return initialTasks
   })
 
+  // Gantt Items state (localStorage 연동)
+  const [ganttItems, setGanttItems] = useState<GanttItem[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`chat-${projectId}-progress-gantt`)
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    }
+    return initialGanttItems
+  })
+
   // localStorage에 tasks 저장
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(`chat-${projectId}-progress-tasks`, JSON.stringify(tasks))
     }
   }, [tasks, projectId])
+
+  // localStorage에 ganttItems 저장
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`chat-${projectId}-progress-gantt`, JSON.stringify(ganttItems))
+    }
+  }, [ganttItems, projectId])
 
   const toggleTask = (taskId: string) => {
     setTasks(prev => prev.map(task =>
@@ -89,6 +126,18 @@ export default function ProgressPage() {
     setTasks(prev => [newTask, ...prev])
   }
 
+  const addGanttItem = (item: Omit<GanttItem, "id">) => {
+    const newItem: GanttItem = {
+      id: Date.now().toString(),
+      ...item,
+    }
+    setGanttItems(prev => [...prev, newItem])
+  }
+
+  const deleteGanttItem = (id: string) => {
+    setGanttItems(prev => prev.filter(item => item.id !== id))
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Project Header */}
@@ -99,7 +148,6 @@ export default function ProgressPage() {
         {/* Tab Navigation */}
         <nav className="flex items-center gap-2 mb-6">
             {menuItems.map((item) => {
-              const Icon = item.icon
               const isActive = activeMenu === item.id
               return (
                 <button
@@ -111,7 +159,6 @@ export default function ProgressPage() {
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
-                <Icon className="h-4 w-4" />
                   {item.label}
                 </button>
               )
@@ -121,19 +168,31 @@ export default function ProgressPage() {
         {/* Content */}
         <div className="pb-8">
           {activeMenu === "timeline" && (
-            <div className="grid grid-cols-3 gap-6">
-              {/* 왼쪽: 간트차트 (2/3) */}
-              <div className="col-span-2">
-                <TimelineView />
-          </div>
-              {/* 오른쪽: TO-DO (1/3) */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* 왼쪽: TO-DO (1/2) */}
               <div className="col-span-1">
-              <TodayView tasks={tasks} onToggle={toggleTask} onAddTask={addTask} />
+                <TodayView tasks={tasks} onToggle={toggleTask} onAddTask={addTask} />
+              </div>
+              {/* 오른쪽: 간트차트 (1/2) */}
+              <div className="col-span-1">
+                <TimelineView
+                  items={ganttItems}
+                  onAddItem={addGanttItem}
+                  onDeleteItem={deleteGanttItem}
+                />
               </div>
             </div>
             )}
-            {activeMenu === "ai-tools" && <AIToolsView />}
-            {activeMenu === "custom-recommendations" && <CustomRecommendationsView />}
+            {activeMenu === "custom-recommendations" && (
+              <div className="h-[calc(100vh-220px)]">
+                <CustomRecommendationsView />
+              </div>
+            )}
+            {activeMenu === "tool-search" && (
+              <div className="h-[calc(100vh-220px)]">
+                <ToolSearchView />
+              </div>
+            )}
           </div>
       </div>
     </div>

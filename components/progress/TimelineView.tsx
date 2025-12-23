@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Plus, X, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,19 +15,52 @@ const colorOptions = [
   { name: "분홍", value: "bg-pink-500" },
 ]
 
-// 오늘 날짜
+// 상수
 const today = new Date()
+today.setHours(0, 0, 0, 0)
 const formatDate = (date: Date) => date.toISOString().split("T")[0]
+const DAY_WIDTH = 80 // 각 날짜 칸 너비 (px)
 
-// 일주일 날짜 계산
-const getWeekDates = () => {
-  const dates = []
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today)
-    date.setDate(today.getDate() + i)
-    dates.push(date)
+// 날짜 범위 계산 (모든 간트 아이템 분석)
+const getDateRange = (items: GanttItem[]) => {
+  if (items.length === 0) {
+    // 아이템이 없으면 오늘부터 10일
+    return {
+      startDate: new Date(today),
+      totalDays: 10,
+      dates: Array.from({ length: 10 }, (_, i) => {
+        const date = new Date(today)
+        date.setDate(today.getDate() + i)
+        return date
+      })
+    }
   }
-  return dates
+
+  let minDate = new Date(items[0].startDate)
+  let maxDate = new Date(items[0].endDate)
+
+  items.forEach(item => {
+    const start = new Date(item.startDate)
+    const end = new Date(item.endDate)
+    if (start < minDate) minDate = start
+    if (end > maxDate) maxDate = end
+  })
+
+  // 오늘이 범위에 포함되도록 조정
+  if (today < minDate) minDate = new Date(today)
+  if (today > maxDate) maxDate = new Date(today)
+
+  // 최소 10일 보장
+  const totalDays = Math.max(10, Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1)
+
+  // 날짜 배열 생성
+  const dates = Array.from({ length: totalDays }, (_, i) => {
+    const date = new Date(minDate)
+    date.setDate(minDate.getDate() + i)
+    return date
+  })
+
+  return { startDate: minDate, totalDays, dates }
 }
 
 // D-day 계산
@@ -37,23 +70,20 @@ const getDday = (endDate: string) => {
   return diff
 }
 
-// 간트 바 위치 계산 (일주일 기준)
-const calculateGanttPosition = (startDate: string, endDate: string) => {
-  const weekStart = new Date(today)
-  weekStart.setHours(0, 0, 0, 0)
-  
+// 간트 바 위치 계산 (픽셀 기반)
+const calculateGanttPosition = (startDate: string, endDate: string, rangeStart: Date) => {
   const start = new Date(startDate)
   const end = new Date(endDate)
-  
-  // 시작점 (0-100%)
-  const startDiff = Math.max(0, (start.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24))
-  const startPercent = Math.min(100, (startDiff / 7) * 100)
-  
-  // 기간
-  const duration = Math.max(1, (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24) + 1)
-  const durationPercent = Math.min(100 - startPercent, (duration / 7) * 100)
-  
-  return { left: startPercent, width: durationPercent }
+
+  // rangeStart부터의 경과 일수
+  const startOffset = Math.floor((start.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24))
+  const left = Math.max(0, startOffset * DAY_WIDTH)
+
+  // 업무 기간 (일)
+  const duration = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1)
+  const width = duration * DAY_WIDTH
+
+  return { left, width, duration }
 }
 
 interface TimelineViewProps {
@@ -62,26 +92,28 @@ interface TimelineViewProps {
   onDeleteItem?: (id: string) => void
 }
 
-export function TimelineView({ 
-  items: propItems, 
-  onAddItem, 
-  onDeleteItem 
+export function TimelineView({
+  items: propItems,
+  onAddItem,
+  onDeleteItem
 }: TimelineViewProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
   // 내부 상태 (props가 없을 경우 사용)
   const [internalItems, setInternalItems] = useState<GanttItem[]>([
-    { 
-      id: "1", 
-      title: "기획", 
-      startDate: formatDate(today), 
+    {
+      id: "1",
+      title: "기획",
+      startDate: formatDate(today),
       endDate: formatDate(new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)),
-      color: "bg-blue-500" 
+      color: "bg-blue-500"
     },
-    { 
-      id: "2", 
-      title: "디자인", 
-      startDate: formatDate(new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)), 
+    {
+      id: "2",
+      title: "디자인",
+      startDate: formatDate(new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)),
       endDate: formatDate(new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000)),
-      color: "bg-purple-500" 
+      color: "bg-purple-500"
     },
   ])
 
@@ -95,7 +127,21 @@ export function TimelineView({
     color: "bg-blue-500",
   })
 
-  const weekDates = getWeekDates()
+  // 날짜 범위 계산
+  const { startDate, totalDays, dates } = getDateRange(ganttItems)
+
+  // 초기 스크롤: 오늘 날짜가 왼쪽에서 2번째 칸에 오도록
+  useEffect(() => {
+    if (scrollRef.current) {
+      const todayIndex = dates.findIndex(date =>
+        date.toDateString() === today.toDateString()
+      )
+      if (todayIndex !== -1) {
+        // 오늘이 왼쪽에서 2번째에 오도록 (10일 뷰포트 기준)
+        scrollRef.current.scrollLeft = Math.max(0, (todayIndex - 1) * DAY_WIDTH)
+      }
+    }
+  }, [dates])
 
   const handleAddItem = () => {
     if (!newItem.title.trim()) return
@@ -139,7 +185,7 @@ export function TimelineView({
       {/* Gantt Chart */}
       <div className="bg-muted/50 rounded-xl p-6 border border-border">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">이번 주 일정</h3>
+          <h3 className="text-lg font-semibold">📅 이번 주 일정</h3>
           <Button 
             size="sm" 
             variant="outline" 
@@ -219,67 +265,85 @@ export function TimelineView({
           </motion.div>
         )}
         
-        {/* Gantt Bars */}
-        <div className="space-y-3">
-          {ganttItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              등록된 업무가 없습니다. 업무를 추가해주세요.
-            </p>
-          ) : (
-            ganttItems.map((item) => {
-              const position = calculateGanttPosition(item.startDate, item.endDate)
+        {/* Gantt Bars - Scrollable */}
+        <div
+          ref={scrollRef}
+          className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+        >
+          {/* 날짜 라벨 */}
+          <div
+            className="flex border-b border-border pb-2 mb-3"
+            style={{ width: totalDays * DAY_WIDTH }}
+          >
+            {dates.map((date, index) => {
+              const dayNames = ["일", "월", "화", "수", "목", "금", "토"]
+              const isToday = date.toDateString() === today.toDateString()
               return (
-                <div key={item.id} className="flex items-center gap-4 group">
-                  <span className="w-24 text-sm text-muted-foreground truncate" title={item.title}>
-                    {item.title}
-                  </span>
-                  <div className="flex-1 h-8 bg-muted rounded-lg relative overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${position.width}%` }}
-                      transition={{ duration: 0.5 }}
-                      className={`absolute h-full rounded-lg ${item.color} flex items-center justify-end pr-2`}
-                      style={{ left: `${position.left}%` }}
-                    >
-                      <span className="text-xs text-white/80 font-medium">
-                        {Math.ceil(position.width / 100 * 7)}일
-                      </span>
-                    </motion.div>
+                <div
+                  key={index}
+                  className="flex-shrink-0 text-center"
+                  style={{ width: DAY_WIDTH }}
+                >
+                  <div className={`text-xs font-medium ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                    {date.getMonth() + 1}/{date.getDate()}
                   </div>
-                  <button
-                    onClick={() => handleDeleteItem(item.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  <div className={`text-[10px] ${isToday ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                    {dayNames[date.getDay()]}
+                  </div>
+                  {isToday && (
+                    <div className="mt-1 mx-auto w-1 h-1 rounded-full bg-primary" />
+                  )}
                 </div>
               )
-            })
-          )}
-        </div>
+            })}
+          </div>
 
-        {/* Week Labels */}
-        <div className="flex justify-between mt-4 text-xs text-muted-foreground">
-          {weekDates.map((date, index) => {
-            const dayNames = ["일", "월", "화", "수", "목", "금", "토"]
-            const isToday = date.toDateString() === today.toDateString()
-            return (
-              <span 
-                key={index} 
-                className={isToday ? "text-primary font-semibold" : ""}
-              >
-                {date.getMonth() + 1}/{date.getDate()} ({dayNames[date.getDay()]})
-              </span>
-            )
-          })}
+          {/* 간트 바 */}
+          <div className="space-y-3" style={{ width: totalDays * DAY_WIDTH }}>
+            {ganttItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                등록된 업무가 없습니다. 업무를 추가해주세요.
+              </p>
+            ) : (
+              ganttItems.map((item) => {
+                const position = calculateGanttPosition(item.startDate, item.endDate, startDate)
+                return (
+                  <div key={item.id} className="flex items-center gap-4 group">
+                    <span className="w-24 text-sm text-muted-foreground truncate flex-shrink-0" title={item.title}>
+                      {item.title}
+                    </span>
+                    <div className="flex-1 h-8 bg-muted/30 rounded-lg relative">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: position.width }}
+                        transition={{ duration: 0.5 }}
+                        className={`absolute h-full rounded-lg ${item.color} flex items-center justify-center`}
+                        style={{ left: position.left }}
+                      >
+                        <span className="text-xs text-white font-medium px-2">
+                          {position.duration}일
+                        </span>
+                      </motion.div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive flex-shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )
+              })
+            )}
+          </div>
         </div>
       </div>
 
       {/* Upcoming Deadlines */}
       <div className="bg-muted/50 rounded-xl p-6 border border-border">
         <div className="flex items-center gap-2 mb-4">
-          <Calendar className="h-5 w-5 text-muted-foreground" />
-          <h3 className="text-lg font-semibold">다가오는 마감</h3>
+          {/* <Calendar className="h-5 w-5 text-muted-foreground" /> */}
+          <h3 className="text-lg font-semibold">⏰ 다가오는 마감</h3>
           <span className="text-xs text-muted-foreground">(일주일 이내)</span>
         </div>
         
