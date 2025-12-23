@@ -1,7 +1,7 @@
 // app/api/report/route.ts
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-import { REPORT_GENERATION_PROMPT } from "@/lib/prompts";
+import { REPORT_GENERATION_PROMPT } from "@/lib/data/prompts";
 
 const apiKey = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");

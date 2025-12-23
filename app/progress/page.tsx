@@ -5,8 +5,8 @@ import { Task, MenuItem, GanttItem } from "@/lib/types"
 import { ProjectHeader } from "@/components/shared"
 import { TimelineView, TodayView, CustomRecommendationsView, ToolSearchView } from "@/components/progress"
 import { getProjectStorageItem, setProjectStorageItem } from "@/lib/storage-utils"
-import { menuItems } from "@/lib/progress-constants"
-import { initialTasks, initialGanttItems } from "@/lib/initial-data"
+import { menuItems } from "@/lib/data/project-constants"
+import { initialTasks, initialGanttItems } from "@/lib/data/initial-data"
 
 export default function ProgressPage() {
   const [activeMenu, setActiveMenu] = useState<MenuItem>("timeline")

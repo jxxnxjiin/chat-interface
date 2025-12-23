@@ -1,7 +1,7 @@
 // app/api/chat/route.ts
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-import { SYSTEM_PROMPT } from "@/lib/prompts";
+import { SYSTEM_PROMPT } from "@/lib/data/prompts";
 import { initiationChatSchema } from "@/lib/schemas";
 
 const apiKey = process.env.GOOGLE_API_KEY;

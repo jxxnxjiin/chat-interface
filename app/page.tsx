@@ -14,8 +14,8 @@ import {
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Project } from "@/lib/types"
-import { statusConfig } from "@/lib/project-constants"
-import { initialProjects } from "@/lib/initial-data"
+import { statusConfig } from "@/lib/data/project-constants"
+import { initialProjects } from "@/lib/data/initial-data"
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>(initialProjects)

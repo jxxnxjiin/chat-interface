@@ -1,7 +1,7 @@
 // app/api/tool-recommendations/route.ts
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-import { TOOL_RECOMMENDATION_PROMPT } from "@/lib/prompts";
+import { TOOL_RECOMMENDATION_PROMPT } from "@/lib/data/prompts";
 import { toolRecommendationSchema } from "@/lib/schemas";
 
 const apiKey = process.env.GOOGLE_API_KEY;
