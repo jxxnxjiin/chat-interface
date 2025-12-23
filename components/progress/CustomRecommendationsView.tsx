@@ -84,32 +84,34 @@ export function CustomRecommendationsView() {
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      {/* 헤더 */}
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <h3 className="text-lg font-semibold">맞춤 추천</h3>
-          <Button
-            onClick={handleGetRecommendations}
-            disabled={isLoading}
-            size="sm"
-            className="gap-2"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                분석 중...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                추천 받기
-              </>
-            )}
-          </Button>
+      {/* 콜아웃 */}
+      <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl">
+        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <Sparkles className="h-5 w-5 text-primary" />
         </div>
-        <p className="text-sm text-muted-foreground">
-          1단계 기획안과 프로젝트 일정을 분석하여 맞춤형 도구를 추천받으세요.
-        </p>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-foreground font-medium">
+            1단계 기획안과 프로젝트 일정을 분석하여 맞춤형 도구를 추천받으세요.
+          </p>
+        </div>
+        <Button
+          onClick={handleGetRecommendations}
+          disabled={isLoading}
+          size="sm"
+          className="gap-2 flex-shrink-0"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              분석 중...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              추천 받기
+            </>
+          )}
+        </Button>
       </div>
 
       {/* 도구 목록 */}
