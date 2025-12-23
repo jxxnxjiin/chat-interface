@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Send, Sparkles, Save, FileText, Download, Loader2, ChevronRight, Layout } from "lucide-react"
+import { useState, useEffect } from "react"
+import { AnimatePresence } from "framer-motion"
+import { Save, FileText, Download, Loader2, Layout, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ProjectHeader, TypingIndicator, SlidePanel } from "@/components/shared"
+import { ProjectHeader, SlidePanel, ChatMessageList, ChatInput } from "@/components/shared"
 import { Message } from "@/lib/types"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkBreaks from "remark-breaks"
 
+// 실시간 기획안 작성
 interface PlanData {
   reason: string
   goal: string
@@ -54,8 +55,6 @@ export default function InitiationPage() {
     ]
   })
   const [inputValue, setInputValue] = useState("")
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [isTyping, setIsTyping] = useState(false)
 
   // 실시간 기획안 데이터
@@ -92,30 +91,6 @@ export default function InitiationPage() {
       localStorage.setItem(`chat-${projectId}-initiation-planData`, JSON.stringify(planData))
     }
   }, [planData, projectId])
-
-  // 텍스트 영역 높이 자동 조절
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "inherit"
-      const scrollHeight = textareaRef.current.scrollHeight
-      textareaRef.current.style.height = `${Math.min(scrollHeight, 200)}px`
-    }
-  }, [inputValue])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
 
   const handleSend = async () => {
     if (!inputValue.trim() || isTyping) return
@@ -244,75 +219,21 @@ export default function InitiationPage() {
             </div> */}
 
             {/* Chat Messages */}
-            <div className="flex-1 pr-6 py-10 space-y-8">
-              <AnimatePresence initial={false}>
-                {messages.map((message) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`flex items-start gap-4 ${message.role === "user" ? "flex-row-reverse" : ""}`}
-                  >
-                    <div className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shadow-sm ${
-                      message.role === "user" 
-                        ? "bg-primary text-primary-foreground" 
-                        : "bg-muted text-muted-foreground border border-border"
-                    }`}>
-                      {message.role === "user" ? "ME" : "AI"}
-                    </div>
-
-                    <div
-                      className={`max-w-[80%] rounded-2xl px-6 py-4 shadow-sm ${
-                        message.role === "user"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card text-foreground border border-border"
-                      }`}
-                    >
-                      <div className={`text-[15px] leading-relaxed prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>ul]:ml-0 [&>ol]:ml-0 [&>blockquote]:ml-0 [&>*]:px-0 ${
-                        message.role === "user" ? "prose-invert" : "dark:prose-invert"
-                      }`}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-                {isTyping && <TypingIndicator />}
-              </AnimatePresence>
-              <div ref={messagesEndRef} />
-            </div>
+            <ChatMessageList messages={messages} isTyping={isTyping} variant="default" />
 
             {/* Input Area (Centered) */}
-            <div className="sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent pr-6 py-8">
-              <div className="max-w-3xl mx-auto relative group">
-                <div className="flex items-end gap-3 p-2 bg-card border border-border rounded-[28px] shadow-2xl focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                  <textarea
-                    ref={textareaRef}
-                    rows={1}
-                    placeholder="프로젝트에 대해 설명해주세요..."
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    className="flex-1 bg-transparent px-4 py-3 text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none resize-none min-h-[48px] max-h-[200px] leading-relaxed"
-                  />
-                  <Button
-                    size="icon"
-                    onClick={handleSend}
-                    disabled={!inputValue.trim() || isTyping}
-                    className="h-10 w-10 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100 flex-shrink-0 mb-1 mr-1"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-3 text-center font-medium opacity-60">
-                  Shift + Enter로 줄바꿈, Enter로 전송
-                </p>
-              </div>
-            </div>
+            <ChatInput
+              value={inputValue}
+              onChange={setInputValue}
+              onSend={handleSend}
+              disabled={isTyping}
+              placeholder="프로젝트에 대해 설명해주세요..."
+              variant="default"
+              showHint={true}
+            />
         </main>
 
-          {/* Sidebar: Real-time Plan Panel */}
+          {/* Real-time Plan Panel */}
           <aside className="w-[420px] flex-shrink-0 flex flex-col bg-background px-6 py-4 z-10">
           <div className="flex-1 flex flex-col bg-card border border-border rounded-2xl shadow-lg overflow-hidden">
             <div className="flex items-center justify-between px-6 py-5 border-b border-border bg-card/50 backdrop-blur-sm">

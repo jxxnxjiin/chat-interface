@@ -1,14 +1,10 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Send, ExternalLink } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { TypingIndicator } from "@/components/shared"
+import { ExternalLink } from "lucide-react"
+import { ChatMessageList, ChatInput } from "@/components/shared"
 import { Message } from "@/lib/types"
-import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
-import remarkBreaks from "remark-breaks"
 
 interface RecommendedTool {
   id: string
@@ -61,8 +57,6 @@ export function ToolSearchView() {
     }
     return []
   })
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // localStorage에 messages 저장
   useEffect(() => {
@@ -77,29 +71,6 @@ export function ToolSearchView() {
       localStorage.setItem(`chat-${projectId}-tool-search-tools`, JSON.stringify(recommendedTools))
     }
   }, [recommendedTools, projectId])
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "inherit"
-      const scrollHeight = textareaRef.current.scrollHeight
-      textareaRef.current.style.height = `${Math.min(scrollHeight, 200)}px`
-    }
-  }, [inputValue])
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
 
   const handleSend = async () => {
     if (!inputValue.trim() || isTyping) return
@@ -159,67 +130,18 @@ export function ToolSearchView() {
       {/* 왼쪽: 채팅 UI (2/3) */}
       <div className="col-span-2 flex flex-col bg-card border border-border rounded-2xl overflow-hidden">
         {/* 채팅 메시지 */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <AnimatePresence initial={false}>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex items-start gap-4 ${message.role === "user" ? "flex-row-reverse" : ""}`}
-              >
-                <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground border border-border"
-                }`}>
-                  {message.role === "user" ? "ME" : "AI"}
-                </div>
-
-                <div
-                  className={`max-w-[75%] rounded-xl px-5 py-3 shadow-sm ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted/50 text-foreground border border-border"
-                  }`}
-                >
-                  <div className={`text-sm leading-relaxed prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>ul]:ml-0 [&>ol]:ml-0 [&>blockquote]:ml-0 [&>*]:px-0 ${
-                    message.role === "user" ? "prose-invert" : "dark:prose-invert"
-                  }`}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                      {message.content}
-                    </ReactMarkdown>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-            {isTyping && <TypingIndicator />}
-          </AnimatePresence>
-          <div ref={messagesEndRef} />
-        </div>
+        <ChatMessageList messages={messages} isTyping={isTyping} variant="compact" />
 
         {/* 입력 영역 */}
-        <div className="border-t border-border p-4">
-          <div className="flex items-end gap-3 p-2 bg-background border border-border rounded-2xl">
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              placeholder="어떤 작업을 하시나요?"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyPress}
-              className="flex-1 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none resize-none min-h-[40px] max-h-[200px] leading-relaxed"
-            />
-            <Button
-              size="icon"
-              onClick={handleSend}
-              disabled={!inputValue.trim() || isTyping}
-              className="h-9 w-9 rounded-full bg-primary text-primary-foreground hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100 flex-shrink-0"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        <ChatInput
+          value={inputValue}
+          onChange={setInputValue}
+          onSend={handleSend}
+          disabled={isTyping}
+          placeholder="어떤 작업을 하시나요?"
+          variant="compact"
+          showHint={false}
+        />
       </div>
 
       {/* 오른쪽: 추천 도구 카드 리스트 (1/3) */}
