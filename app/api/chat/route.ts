@@ -1,32 +1,11 @@
 // app/api/chat/route.ts
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { SYSTEM_PROMPT } from "@/lib/prompts";
+import { initiationChatSchema } from "@/lib/schemas";
 
 const apiKey = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
-
-// JSON 응답 스키마 정의
-const responseSchema = {
-  type: SchemaType.OBJECT as const,
-  properties: {
-    reply: {
-      type: SchemaType.STRING as const,
-      description: "사용자에게 보여줄 대화 답변",
-    },
-    report: {
-      type: SchemaType.OBJECT as const,
-      description: "실시간 기획안에 반영할 데이터",
-      properties: {
-        reason: { type: SchemaType.STRING as const, description: "기획 배경" },
-        goal: { type: SchemaType.STRING as const, description: "목표" },
-        detailedPlan: { type: SchemaType.STRING as const, description: "상세 계획" },
-        resources: { type: SchemaType.STRING as const, description: "필요 자원" },
-      },
-    },
-  },
-  required: ["reply"],
-};
 
 export async function POST(req: Request) {
   try {
@@ -42,12 +21,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "잘못된 요청 형식입니다." }, { status: 400 });
     }
 
-    const model = genAI.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       systemInstruction: SYSTEM_PROMPT,
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: responseSchema,
+        responseSchema: initiationChatSchema,
       },
     });
 

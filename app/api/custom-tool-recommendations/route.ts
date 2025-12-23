@@ -1,58 +1,11 @@
 // app/api/custom-tool-recommendations/route.ts
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { CUSTOM_TOOL_RECOMMENDATION_PROMPT } from "@/lib/prompts";
+import { customToolRecommendationSchema } from "@/lib/schemas";
 
 const apiKey = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
-
-// JSON 응답 스키마 정의 (기존 tool-recommendations와 동일)
-const responseSchema = {
-  type: SchemaType.OBJECT as const,
-  properties: {
-    tools: {
-      type: SchemaType.ARRAY as const,
-      description: "프로젝트에 필요한 도구 목록",
-      items: {
-        type: SchemaType.OBJECT as const,
-        properties: {
-          tool_name: { type: SchemaType.STRING as const, description: "도구 이름" },
-          description: { type: SchemaType.STRING as const, description: "도구에 대한 1-2문장 설명" },
-          url: { type: SchemaType.STRING as const, description: "도구의 공식 웹사이트 URL만 입력 (설명 제외, 모를 경우 빈 문자열)" },
-          category: { type: SchemaType.STRING as const, description: "도구 카테고리 (예: 프로젝트 관리, 디자인, 개발, 협업 등)" },
-        },
-        required: ["tool_name", "description", "category"],
-      },
-    },
-  },
-  required: ["tools"],
-};
-
-// 시스템 프롬프트
-const CUSTOM_TOOL_RECOMMENDATION_PROMPT = `
-# Role
-당신은 **프로젝트 맞춤형 도구 추천 전문가**입니다. 사용자의 프로젝트 정보를 분석하여 실제로 유용한 도구들을 추천하는 것이 당신의 임무입니다.
-
-# Task
-사용자가 제공한 프로젝트 기획안, 일정, TO-DO 리스트를 바탕으로 **프로젝트 수행에 필요한 도구 5-10개**를 추천하세요.
-
-# Recommendation Logic
-1. **프로젝트 성격 파악**: 기획안에서 프로젝트의 성격(개발, 디자인, 마케팅, 콘텐츠 제작 등)을 파악
-2. **업무 단계 고려**: 간트차트의 업무 항목들을 보고 어떤 단계의 도구가 필요한지 판단
-3. **실용성 우선**: 실제로 존재하고 널리 사용되는 도구만 추천
-4. **카테고리 다양성**: 프로젝트 관리, 디자인, 개발, 협업, 문서작성 등 다양한 카테고리의 도구를 균형있게 추천
-
-# Output Format
-- 'tools' 배열에 추천 도구 목록을 담아 반환
-- 각 도구는 tool_name, description, url, category 필드를 포함
-- category는 한국어로 작성 (예: "프로젝트 관리", "디자인", "개발", "협업")
-- URL은 정확히 알고 있을 때만 포함
-
-# Important Notes
-- 한국어 지원이 좋은 도구를 우선 고려
-- 무료 또는 저렴한 도구를 먼저 추천
-- 최신 AI 도구도 적극 추천
-- 도구 설명은 "왜 이 프로젝트에 적합한지" 중심으로 작성
-`;
 
 export async function POST(req: Request) {
   try {
@@ -105,7 +58,7 @@ ${context}
       systemInstruction: CUSTOM_TOOL_RECOMMENDATION_PROMPT,
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: responseSchema,
+        responseSchema: customToolRecommendationSchema,
       },
     });
 

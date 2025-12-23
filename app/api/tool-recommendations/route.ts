@@ -1,35 +1,11 @@
 // app/api/tool-recommendations/route.ts
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { TOOL_RECOMMENDATION_PROMPT } from "@/lib/prompts";
+import { toolRecommendationSchema } from "@/lib/schemas";
 
 const apiKey = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
-
-// JSON 응답 스키마 정의
-const responseSchema = {
-  type: SchemaType.OBJECT as const,
-  properties: {
-    reply: {
-      type: SchemaType.STRING as const,
-      description: "사용자에게 보여줄 대화 답변",
-    },
-    tools: {
-      type: SchemaType.ARRAY as const,
-      description: "추천할 도구 목록 (선택적, 한 번에 여러 도구 추천 가능)",
-      items: {
-        type: SchemaType.OBJECT as const,
-        properties: {
-          tool_name: { type: SchemaType.STRING as const, description: "도구 이름" },
-          description: { type: SchemaType.STRING as const, description: "도구에 대한 1-2문장 설명" },
-          url: { type: SchemaType.STRING as const, description: "도구의 공식 웹사이트 URL만 입력 (설명 제외, 모를 경우 빈 문자열)" },
-        },
-        required: ["tool_name", "description"],
-      },
-    },
-  },
-  required: ["reply"],
-};
 
 export async function POST(req: Request) {
   try {
@@ -50,7 +26,7 @@ export async function POST(req: Request) {
       systemInstruction: TOOL_RECOMMENDATION_PROMPT,
       generationConfig: {
         responseMimeType: "application/json",
-        responseSchema: responseSchema,
+        responseSchema: toolRecommendationSchema,
       },
     });
 
