@@ -148,9 +148,9 @@ export function CustomRecommendationsView() {
   }
 
   return (
-    <div className="flex gap-6 h-full">
-      {/* 왼쪽: 채팅 UI */}
-      <div className="flex-1 flex flex-col bg-card border border-border rounded-2xl overflow-hidden">
+    <div className="grid grid-cols-3 gap-6">
+      {/* 왼쪽: 채팅 UI (2/3) */}
+      <div className="col-span-2 flex flex-col bg-card border border-border rounded-2xl overflow-hidden min-h-[600px]">
         {/* 채팅 메시지 */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <AnimatePresence initial={false}>
@@ -215,8 +215,8 @@ export function CustomRecommendationsView() {
         </div>
       </div>
 
-      {/* 오른쪽: 추천 도구 카드 리스트 */}
-      <div className="flex-1 flex flex-col bg-card border border-border rounded-2xl overflow-hidden">
+      {/* 오른쪽: 추천 도구 카드 리스트 (1/3) */}
+      <div className="col-span-1 flex flex-col bg-card border border-border rounded-2xl overflow-hidden min-h-[600px]">
         <div className="px-6 py-4 border-b border-border">
           <h3 className="font-bold text-foreground">추천 도구</h3>
           <p className="text-xs text-muted-foreground mt-1">
@@ -224,7 +224,7 @@ export function CustomRecommendationsView() {
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {recommendedTools.length === 0 ? (
             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
               아직 추천된 도구가 없습니다
@@ -236,12 +236,12 @@ export function CustomRecommendationsView() {
                   key={tool.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-5 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-xl hover:shadow-md transition-shadow"
+                  className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-xl hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <h4 className="font-bold text-foreground mb-2">{tool.tool_name}</h4>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-foreground text-sm mb-1 truncate">{tool.tool_name}</h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
                         {tool.description}
                       </p>
                     </div>
@@ -250,9 +250,9 @@ export function CustomRecommendationsView() {
                         href={tool.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-shrink-0 p-2 hover:bg-primary/10 rounded-lg transition-colors"
+                        className="flex-shrink-0 p-1.5 hover:bg-primary/10 rounded-lg transition-colors"
                       >
-                        <ExternalLink className="h-4 w-4 text-primary" />
+                        <ExternalLink className="h-3.5 w-3.5 text-primary" />
                       </a>
                     )}
                   </div>

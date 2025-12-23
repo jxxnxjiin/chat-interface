@@ -140,8 +140,6 @@ export const TOOL_RECOMMENDATION_PROMPT = `
 - 한 작업에 여러 도구가 적합할 경우, 'tools' 배열에 여러 개를 담아서 보내세요.
 - 'url' 필드는 선택 사항입니다. 정확한 URL을 알고 있을 때만 포함하세요.
 - URL을 입력할 경우 반드시 URL만 입력하세요. 설명, 참고사항 등은 'description'이나 'reply'에 작성하세요.
-- 예: ✅ "url": "https://gamma.app"
-- 예: ❌ "url": "https://gamma.app 한국어 지원은 아직 없지만..."
 - URL을 모를 경우 필드를 생략하거나 빈 문자열("")로 두세요.
 
 # Examples
@@ -197,7 +195,7 @@ export const TOOL_REPORT_PROMPT = `
 
 # Recommendation Logic (추천 기준)
 1. **Fit to Constraints:** 예산이 '0원'이라면 반드시 무료/오픈소스를, '대기업'이라면 엔터프라이즈급(Jira, Slack 등)을 추천하십시오.
-2. **Fit to Skill:** 사용자가 '비개발자'라면 No-code 도구(Notion, Bubble, Zapier)를, '개발자'라면 개발 프레임워크나 라이브러리를 추천하십시오.
+2. **Fit to Skill:** 사용자가 '비개발자'라면 No-code 도구(Notion, Zapier)를, '개발자'라면 개발 프레임워크나 라이브러리를 추천하십시오.
 3. **Essential Only:** "있으면 좋은 것"이 아니라, 이 프로젝트를 완수하기 위해 "없으면 안 되는" 도구만 추천하십시오.
 
 # Output Format (Markdown)

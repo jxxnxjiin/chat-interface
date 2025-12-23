@@ -3,15 +3,13 @@
 import { useState, useEffect } from "react"
 import {
   Calendar,
-  CheckSquare,
   Sparkles,
-  ChevronRight,
 } from "lucide-react"
 import { Task, MenuItem } from "@/lib/types"
 import { ProjectHeader } from "@/components/shared"
 import { TimelineView, TodayView, AIToolsView, CustomRecommendationsView } from "@/components/progress"
 
-// 사이드바 메뉴 아이템
+// 탭 메뉴 아이템
 const menuItems = [
   { id: "timeline" as MenuItem, label: "프로젝트 타임라인", icon: Calendar },
   { id: "ai-tools" as MenuItem, label: "추천 도구 목록", icon: Sparkles },
@@ -92,15 +90,14 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="min-h-screen bg-background">
       {/* Project Header */}
       <ProjectHeader currentStep={2} />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 border-r border-border bg-muted/30 flex flex-col">
-          {/* Navigation */}
-          <nav className="flex-1 p-4 pt-6 space-y-2">
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Tab Navigation */}
+        <nav className="flex items-center gap-2 mb-6">
             {menuItems.map((item) => {
               const Icon = item.icon
               const isActive = activeMenu === item.id
@@ -108,63 +105,36 @@ export default function ProgressPage() {
                 <button
                   key={item.id}
                   onClick={() => setActiveMenu(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     isActive 
-                      ? "bg-primary text-primary-foreground" 
+                    ? "bg-primary text-primary-foreground shadow-sm" 
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
+                <Icon className="h-4 w-4" />
                   {item.label}
-                  {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
                 </button>
               )
             })}
           </nav>
 
-          {/* Bottom Info */}
-          <div className="p-4">
-            <p className="text-xs text-muted-foreground">
-              마감일: 2025-01-15
-            </p>
+        {/* Content */}
+        <div className="pb-8">
+          {activeMenu === "timeline" && (
+            <div className="grid grid-cols-3 gap-6">
+              {/* 왼쪽: 간트차트 (2/3) */}
+              <div className="col-span-2">
+                <TimelineView />
           </div>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-          {activeMenu === "timeline" ? (
-            /* 타임라인 페이지: 간트차트 + TO-DO */
-            <div className="flex-1 overflow-auto p-8 pr-64">
-              <div className="grid grid-cols-3 gap-6 h-full">
-                {/* 왼쪽: 간트차트 (2/3) */}
-                <div className="col-span-2 overflow-y-auto">
-                  <TimelineView />
-                </div>
-
-                {/* 오른쪽: TO-DO (1/3) */}
-                <div className="col-span-1 overflow-y-auto">
-                  <TodayView tasks={tasks} onToggle={toggleTask} onAddTask={addTask} />
-                </div>
+              {/* 오른쪽: TO-DO (1/3) */}
+              <div className="col-span-1">
+              <TodayView tasks={tasks} onToggle={toggleTask} onAddTask={addTask} />
               </div>
             </div>
-          ) : (
-            /* 다른 페이지들: 기존 레이아웃 */
-            <>
-              {/* Header */}
-              <header className="px-8 py-6 border-b border-border bg-background/95 backdrop-blur-sm">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {menuItems.find(m => m.id === activeMenu)?.label}
-                </h2>
-              </header>
-
-              {/* Content Area */}
-              <div className="flex-1 overflow-auto p-8">
-                {activeMenu === "ai-tools" && <AIToolsView />}
-                {activeMenu === "custom-recommendations" && <CustomRecommendationsView />}
-              </div>
-            </>
-          )}
-        </main>
+            )}
+            {activeMenu === "ai-tools" && <AIToolsView />}
+            {activeMenu === "custom-recommendations" && <CustomRecommendationsView />}
+          </div>
       </div>
     </div>
   )

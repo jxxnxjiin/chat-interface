@@ -98,25 +98,29 @@ const initialProjects: Project[] = [
 ]
 
 export default function DashboardPage() {
-  const [projects, setProjects] = useState<Project[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("chat-projects")
-      if (saved) {
-        return JSON.parse(saved)
-      }
-    }
-    return initialProjects
-  })
+  const [projects, setProjects] = useState<Project[]>(initialProjects)
   const [isCreating, setIsCreating] = useState(false)
   const [newProjectName, setNewProjectName] = useState("")
   const [showArchived, setShowArchived] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  // localStorage에 projects 저장
+  // localStorage에서 projects 로드
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("chat-projects")
+      if (saved) {
+        setProjects(JSON.parse(saved))
+      }
+      setIsLoaded(true)
+    }
+  }, [])
+
+  // localStorage에 projects 저장 (초기 로드 완료 후에만)
+  useEffect(() => {
+    if (isLoaded && typeof window !== "undefined") {
       localStorage.setItem("chat-projects", JSON.stringify(projects))
     }
-  }, [projects])
+  }, [projects, isLoaded])
 
   const handleCreateProject = () => {
     if (!newProjectName.trim()) return
