@@ -12,8 +12,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Chat & Report',
-  description: 'SmartWork',
+  title: 'Jinhak Smartwork',
+  description: '',
   icons: {
     icon: [
       {
