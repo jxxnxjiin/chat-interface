@@ -58,6 +58,13 @@ export function CustomRecommendationsView() {
       const tasksStr = localStorage.getItem(`chat-${projectId}-progress-tasks`)
 
       const planData = planDataStr ? JSON.parse(planDataStr) : null
+
+      // 기획안 데이터가 없으면 경고
+      if (!planData) {
+        alert("기획안을 먼저 생성하세요.")
+        return
+      }
+
       const ganttItems = ganttItemsStr ? JSON.parse(ganttItemsStr) : []
       const tasks = tasksStr ? JSON.parse(tasksStr) : []
 
