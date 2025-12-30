@@ -4,22 +4,29 @@ import { useState, useEffect } from "react"
 import { Task, MenuItem, GanttItem } from "@/lib/types"
 import { ProjectHeader } from "@/components/shared"
 import { TimelineView, TodayView, CustomRecommendationsView, ToolSearchView } from "@/components/progress"
-import { getProjectStorageItem, setProjectStorageItem } from "@/lib/storage-utils"
+import { getCurrentProjectId, getProjectStorageItem, setProjectStorageItem } from "@/lib/storage-utils"
 import { menuItems } from "@/lib/data/project-constants"
 import { initialTasks, initialGanttItems } from "@/lib/data/initial-data"
+
+// 초기 샘플 프로젝트 ID 목록 (이 프로젝트들만 디폴트 데이터 사용)
+const INITIAL_PROJECT_IDS = ["1", "2", "3", "4", "5"]
 
 export default function ProgressPage() {
   const [activeMenu, setActiveMenu] = useState<MenuItem>("timeline")
 
   // Tasks state (localStorage 연동)
-  const [tasks, setTasks] = useState<Task[]>(() =>
-    getProjectStorageItem("progress-tasks", initialTasks)
-  )
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    const projectId = getCurrentProjectId()
+    const defaultValue = INITIAL_PROJECT_IDS.includes(projectId) ? initialTasks : []
+    return getProjectStorageItem("progress-tasks", defaultValue)
+  })
 
   // Gantt Items state (localStorage 연동)
-  const [ganttItems, setGanttItems] = useState<GanttItem[]>(() =>
-    getProjectStorageItem("progress-gantt", initialGanttItems)
-  )
+  const [ganttItems, setGanttItems] = useState<GanttItem[]>(() => {
+    const projectId = getCurrentProjectId()
+    const defaultValue = INITIAL_PROJECT_IDS.includes(projectId) ? initialGanttItems : []
+    return getProjectStorageItem("progress-gantt", defaultValue)
+  })
 
   // localStorage에 tasks 저장
   useEffect(() => {
