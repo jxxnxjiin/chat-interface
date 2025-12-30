@@ -2,10 +2,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { SYSTEM_PROMPT } from "@/lib/data/prompts";
-import { initiationChatSchema } from "@/lib/schemas";
 
 const apiKey = process.env.GOOGLE_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey || "");
+
+const REPORT_DELIMITER = "---REPORT_START---";
+
+// 타임아웃 방지 (Vercel: 최대 60초, Pro는 300초)
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
@@ -24,10 +28,6 @@ export async function POST(req: Request) {
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       systemInstruction: SYSTEM_PROMPT,
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: initiationChatSchema,
-      },
     });
 
     // 대화 내역(history) 설정
@@ -40,51 +40,49 @@ export async function POST(req: Request) {
     if (history.length > 0 && history[0].role === "model") {
       history = history.slice(1);
     }
-    
+
     const lastMessage = messages[messages.length - 1].content;
 
     console.log(`DEBUG: Sending message to Gemini. History: ${history.length} items`);
 
     const chat = model.startChat({ history });
     const result = await chat.sendMessage(lastMessage);
-    const response = await result.response;
+    const response = result.response;
     const text = response.text();
 
-    // console.log("DEBUG: Raw Gemini response:", text);
+    console.log("DEBUG: Raw Gemini response received");
 
-    // JSON 파싱
-    try {
-      const parsedResponse = JSON.parse(text);
+    // 구분자로 분리
+    const parts = text.split(REPORT_DELIMITER);
+    const reply = parts[0].trim();
+    let report = null;
 
-      // 디버깅: report 객체 로그
-      console.log("DEBUG: Parsed response:", JSON.stringify(parsedResponse, null, 2));
-      if (parsedResponse.report) {
-        console.log("DEBUG: Report object:", JSON.stringify(parsedResponse.report, null, 2));
-      } else {
-        console.log("DEBUG: No report object in response");
+    if (parts.length > 1) {
+      const reportText = parts[1].trim();
+      try {
+        report = JSON.parse(reportText);
+        console.log("DEBUG: Parsed report:", JSON.stringify(report, null, 2));
+      } catch (parseError) {
+        console.warn("Report JSON parse failed:", parseError);
       }
-
-      // reply와 report를 분리하여 반환
-      return NextResponse.json({
-        reply: parsedResponse.reply || "응답을 생성하지 못했습니다.",
-        report: parsedResponse.report || null,
-      });
-    } catch (parseError) {
-      // JSON 파싱 실패 시 원본 텍스트를 reply로 반환
-      console.warn("JSON parse failed, returning raw text:", parseError);
-      return NextResponse.json({ reply: text, report: null });
     }
+
+    // reply와 report를 분리하여 반환
+    return NextResponse.json({
+      reply: reply || "응답을 생성하지 못했습니다.",
+      report: report || null,
+    });
 
   } catch (error: any) {
     console.error("Detailed Gemini API Error:", error);
-    
-    const errorMessage = error.message?.includes("not found") 
-      ? "모델명을 찾을 수 없습니다" 
+
+    const errorMessage = error.message?.includes("not found")
+      ? "모델명을 찾을 수 없습니다"
       : "AI 응답 생성 중 오류가 발생했습니다.";
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: errorMessage,
-      details: error.message 
+      details: error.message
     }, { status: 500 });
   }
 }
