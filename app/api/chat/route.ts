@@ -55,7 +55,15 @@ export async function POST(req: Request) {
     // JSON 파싱
     try {
       const parsedResponse = JSON.parse(text);
-      
+
+      // 디버깅: report 객체 로그
+      console.log("DEBUG: Parsed response:", JSON.stringify(parsedResponse, null, 2));
+      if (parsedResponse.report) {
+        console.log("DEBUG: Report object:", JSON.stringify(parsedResponse.report, null, 2));
+      } else {
+        console.log("DEBUG: No report object in response");
+      }
+
       // reply와 report를 분리하여 반환
       return NextResponse.json({
         reply: parsedResponse.reply || "응답을 생성하지 못했습니다.",

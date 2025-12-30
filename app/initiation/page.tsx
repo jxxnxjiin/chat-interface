@@ -60,6 +60,27 @@ export default function InitiationPage() {
     setProjectStorageItem("initiation-planData", planData)
   }, [planData])
 
+  // 타임아웃과 함께 fetch 실행하는 헬퍼 함수
+  const fetchWithTimeout = async (url: string, options: RequestInit, timeout = 10000) => {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+      return response
+    } catch (error: any) {
+      clearTimeout(timeoutId)
+      if (error.name === 'AbortError') {
+        throw new Error('TIMEOUT')
+      }
+      throw error
+    }
+  }
+
   const handleSend = async () => {
     if (!inputValue.trim() || isTyping) return
 
@@ -74,46 +95,99 @@ export default function InitiationPage() {
     setInputValue("")
     setIsTyping(true)
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
-      })
+    const MAX_RETRIES = 3
+    let retryCount = 0
+    let success = false
 
-      const data = await response.json()
+    while (retryCount < MAX_RETRIES && !success) {
+      try {
+        if (retryCount > 0) {
+          console.log(`재시도 중... (${retryCount}/${MAX_RETRIES})`)
+        }
 
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: data.reply || data.error || "응답을 처리하는 중 오류가 발생했습니다.",
-      }
+        const response = await fetchWithTimeout(
+          "/api/chat",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: newMessages }),
+          },
+          15000 // 15초 타임아웃
+        )
 
-      setMessages((prev) => [...prev, aiResponse])
+        const data = await response.json()
 
-      if (data.report) {
-        setPlanData(prev => {
-          const addContent = (existing: string, newContent: string) => {
-            if (!newContent || newContent.trim() === "") return existing
-            if (!existing || existing.trim() === "") return newContent
-            // 중복 체크: 새 내용이 기존 내용에 포함되어 있으면 추가하지 않음
-            if (existing.includes(newContent)) return existing
-            return existing + "\n\n" + newContent
+        // 디버깅: 받은 데이터 로그
+        console.log("DEBUG: Received data from API:", data)
+        if (data.report) {
+          console.log("DEBUG: Report data:", data.report)
+        } else {
+          console.log("DEBUG: No report in response")
+        }
+
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: data.reply || data.error || "응답을 처리하는 중 오류가 발생했습니다.",
+        }
+
+        setMessages((prev) => [...prev, aiResponse])
+
+        if (data.report) {
+          setPlanData(prev => {
+            const addContent = (existing: string, newContent: string) => {
+              if (!newContent || newContent.trim() === "") return existing
+              if (!existing || existing.trim() === "") return newContent
+              // 중복 체크: 새 내용이 기존 내용에 포함되어 있으면 추가하지 않음
+              if (existing.includes(newContent)) return existing
+              return existing + "\n\n" + newContent
+            }
+
+            const newPlanData = {
+              reason: addContent(prev.reason, data.report.reason || ""),
+              goal: addContent(prev.goal, data.report.goal || ""),
+              detailedPlan: addContent(prev.detailedPlan, data.report.detailedPlan || ""),
+              resources: addContent(prev.resources, data.report.resources || ""),
+            }
+
+            console.log("DEBUG: Updated planData:", newPlanData)
+            return newPlanData
+          })
+        }
+
+        success = true
+      } catch (error: any) {
+        console.error(`Error (attempt ${retryCount + 1}):`, error)
+
+        if (error.message === 'TIMEOUT') {
+          retryCount++
+          if (retryCount < MAX_RETRIES) {
+            console.log(`타임아웃 발생. ${retryCount}초 후 재시도합니다...`)
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount)) // 점진적 딜레이
+            continue
+          } else {
+            // 최대 재시도 횟수 초과
+            const errorMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: "⚠️ 응답 시간이 초과되었습니다. 네트워크 상태를 확인하거나 잠시 후 다시 시도해주세요.",
+            }
+            setMessages((prev) => [...prev, errorMessage])
           }
-
-          return {
-            reason: addContent(prev.reason, data.report.reason || ""),
-            goal: addContent(prev.goal, data.report.goal || ""),
-            detailedPlan: addContent(prev.detailedPlan, data.report.detailedPlan || ""),
-            resources: addContent(prev.resources, data.report.resources || ""),
+        } else {
+          // 다른 에러
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: "⚠️ 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
           }
-        })
+          setMessages((prev) => [...prev, errorMessage])
+        }
+        break
       }
-    } catch (error) {
-      console.error("Error:", error)
-    } finally {
-      setIsTyping(false)
     }
+
+    setIsTyping(false)
   }
 
   const handleSavePlan = async () => {
