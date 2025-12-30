@@ -86,3 +86,62 @@ export function setProjectStorageItem<T>(key: string, value: T): void {
   const storageKey = getProjectStorageKey(projectId, key)
   setStorageItem(storageKey, value)
 }
+
+/**
+ * 프로젝트별로 사용되는 모든 스토리지 키 목록
+ */
+const PROJECT_STORAGE_KEYS = [
+  "initiation-messages",
+  "initiation-planData",
+  "progress-tasks",
+  "progress-gantt",
+  "custom-tools",
+  "tool-search-messages",
+  "tool-search-tools",
+] as const
+
+/**
+ * 프로젝트의 모든 데이터 삭제
+ * @param projectId - 삭제할 프로젝트 ID
+ */
+export function deleteProjectData(projectId: string): void {
+  if (typeof window === "undefined") return
+
+  try {
+    PROJECT_STORAGE_KEYS.forEach((key) => {
+      const storageKey = getProjectStorageKey(projectId, key)
+      localStorage.removeItem(storageKey)
+    })
+  } catch (e) {
+    console.error(`Failed to delete project data: ${projectId}`, e)
+  }
+}
+
+/**
+ * 프로젝트의 모든 데이터 복사
+ * @param sourceProjectId - 원본 프로젝트 ID
+ * @param targetProjectId - 대상 프로젝트 ID
+ */
+export function copyProjectData(
+  sourceProjectId: string,
+  targetProjectId: string
+): void {
+  if (typeof window === "undefined") return
+
+  try {
+    PROJECT_STORAGE_KEYS.forEach((key) => {
+      const sourceKey = getProjectStorageKey(sourceProjectId, key)
+      const targetKey = getProjectStorageKey(targetProjectId, key)
+
+      const data = localStorage.getItem(sourceKey)
+      if (data) {
+        localStorage.setItem(targetKey, data)
+      }
+    })
+  } catch (e) {
+    console.error(
+      `Failed to copy project data from ${sourceProjectId} to ${targetProjectId}`,
+      e
+    )
+  }
+}

@@ -10,12 +10,14 @@ import {
   Archive,
   ChevronDown,
   ChevronRight,
+  Copy,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Project } from "@/lib/types"
 import { statusConfig } from "@/lib/data/project-constants"
 import { initialProjects } from "@/lib/data/initial-data"
+import { deleteProjectData, copyProjectData } from "@/lib/storage-utils"
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>(initialProjects)
@@ -65,7 +67,26 @@ export default function DashboardPage() {
   }
 
   const handleDeleteProject = (id: string) => {
+    // 로컬 스토리지에서 프로젝트 데이터 삭제
+    deleteProjectData(id)
+    // 프로젝트 목록에서 제거
     setProjects(prev => prev.filter(p => p.id !== id))
+  }
+
+  const handleCopyProject = (sourceProject: Project) => {
+    // 새 프로젝트 생성
+    const newProject: Project = {
+      ...sourceProject,
+      id: Date.now().toString(),
+      name: `${sourceProject.name} (복사본)`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+
+    // 로컬 스토리지 데이터 복사
+    copyProjectData(sourceProject.id, newProject.id)
+    // 프로젝트 목록에 추가
+    setProjects(prev => [...prev, newProject])
   }
 
   // 진행 중인 프로젝트 (archived 제외)
@@ -216,6 +237,18 @@ export default function DashboardPage() {
                               onClick={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
+                                handleCopyProject(project)
+                              }}
+                            >
+                              <Copy className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
                                 handleDeleteProject(project.id)
                               }}
                             >
@@ -287,14 +320,24 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleDeleteProject(project.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleCopyProject(project)}
+                          >
+                            <Copy className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeleteProject(project.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}

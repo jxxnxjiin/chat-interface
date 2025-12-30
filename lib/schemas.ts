@@ -22,6 +22,7 @@ export const initiationChatSchema = {
         detailedPlan: { type: SchemaType.STRING as const, description: "상세 계획" },
         resources: { type: SchemaType.STRING as const, description: "필요 자원" },
       },
+      required: ["reason", "goal", "detailedPlan", "resources"],
     },
   },
   required: ["reply"],
